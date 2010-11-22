@@ -51,6 +51,7 @@ Fred = {
 		var whtrbtobj
 		// Initialize other modules which are waiting for Fred to be ready
 		Fred.keys.initialize()
+		if (setup) setup()
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
@@ -66,6 +67,7 @@ Fred = {
 		fillStyle('#a00')
 		rect(10,10,40,40)
 		drawText('georgia',15,'white',12,30,'fred')
+		if (draw) draw()
 	},
 	select_layer: function(layer) {
 		Fred.active_layer = layer
