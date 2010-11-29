@@ -231,5 +231,5 @@ Fred = {
 
 //= require <geometry>
 //= require <keys>
-
+//= require <tray>
 

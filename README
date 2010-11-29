@@ -13,6 +13,9 @@ To-do:
 
 - stop_observing() is not working, tools don't deselect properly
 
+- .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
+	- generates an on_drag() call
+	- or default to polygon is_mousewithin()
 - text in polygons, text tool to edit text, 
 	- doubleclick in select tool to switch to text tool
 - styling in CSS-like syntax (like Cartagen)
