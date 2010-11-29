@@ -53,14 +53,12 @@ Fred = {
 		var whtrbtobj
 		// Initialize other modules which are waiting for Fred to be ready
 		Fred.keys.initialize()
-		// Autodetect in-html setup() and draw() calls
-		try { setup = setup || false } catch(e) { setup = false }
-		try { draw = draw || false } catch(e) { draw = false }
+                try { setup = setup || false } catch(e) { setup = false }
+                try { draw = draw || false } catch(e) { draw = false }
 		if (setup) setup()
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
-		Fred.resize(Fred.width,Fred.height)
 		//calculate fps:
 		Fred.timestamp = Fred.date.getTime()
 		Fred.times.unshift(Fred.timestamp)
@@ -108,6 +106,8 @@ Fred = {
 		return obj
 	},
 	resize: function(width,height) {
+		width = width || Fred.width
+		height = height || Fred.height
 		// document.viewport.getWidth() yields undefined in Android browser
 		// try running without resizing just in Android -- disable rotate anyway 
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))

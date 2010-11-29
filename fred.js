@@ -72,13 +72,12 @@ Fred = {
 		TimerManager.setup(Fred.draw,this,Fred.speed)
 		var whtrbtobj
 		Fred.keys.initialize()
-		try { setup = setup || false } catch(e) { setup = false }
-		try { draw = draw || false } catch(e) { draw = false }
+                try { setup = setup || false } catch(e) { setup = false }
+                try { draw = draw || false } catch(e) { draw = false }
 		if (setup) setup()
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
-		Fred.resize(Fred.width,Fred.height)
 		Fred.timestamp = Fred.date.getTime()
 		Fred.times.unshift(Fred.timestamp)
 		if (Fred.times.length > 100) Fred.times.pop()
@@ -124,6 +123,8 @@ Fred = {
 		return obj
 	},
 	resize: function(width,height) {
+		width = width || Fred.width
+		height = height || Fred.height
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))
 		else Fred.width = width
 		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))
