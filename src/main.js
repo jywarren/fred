@@ -11,6 +11,8 @@ Fred = {
 	frame: 0,
 	timestamp: 0,
 	date: new Date,
+	pointer_x: 0,
+	pointer_y: 0,
 	style: {},
 	times: [],
 	// Whether the user is dragging.
@@ -155,18 +157,21 @@ Fred = {
 		$H(Fred.active_tool).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
 				if (method == ('on_'+event)) {
-					Fred.stop_observing(event,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					console.log(event+'#'+Fred.active_tool[method])
+					Fred.stop_observing(event,Fred.active_tool.listeners.get(method))
 				}
 			},this)
 			if (method == 'draw') Fred.stop_observing('fred:postdraw',Fred.active_tool.draw)
 		},this)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
+		Fred.active_tool.listeners = new Hash
 		// Scan tool for on_foo listeners, connect them to available events:
 		$H(Fred.tools[tool]).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
 				if (method == ('on_'+event)) {
-					Fred.observe(event,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					Fred.active_tool.listeners.set(method,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					Fred.observe(event,Fred.active_tool.listeners.get(method))
 				}
 			},this)
 			if (method == 'draw') Fred.observe('fred:postdraw',Fred.active_tool.draw.bindAsEventListener(Fred.active_tool))
@@ -227,9 +232,9 @@ Fred = {
 //= require <tools/tool>
 //= require <tools/select>
 //= require <tools/pen>
-//= require <tools/import>
+//= require <tools/place>
 
 //= require <geometry>
 //= require <keys>
-//= require <tray>
+
 
