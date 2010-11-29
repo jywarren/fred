@@ -40,6 +40,8 @@ Fred = {
 	frame: 0,
 	timestamp: 0,
 	date: new Date,
+	pointer_x: 0,
+	pointer_y: 0,
 	style: {},
 	times: [],
 	drag: false,
@@ -70,9 +72,13 @@ Fred = {
 		TimerManager.setup(Fred.draw,this,Fred.speed)
 		var whtrbtobj
 		Fred.keys.initialize()
+		try { setup = setup || false } catch(e) { setup = false }
+		try { draw = draw || false } catch(e) { draw = false }
+		if (setup) setup()
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
+		Fred.resize(Fred.width,Fred.height)
 		Fred.timestamp = Fred.date.getTime()
 		Fred.times.unshift(Fred.timestamp)
 		if (Fred.times.length > 100) Fred.times.pop()
@@ -83,6 +89,7 @@ Fred = {
 		fillStyle('#a00')
 		rect(10,10,40,40)
 		drawText('georgia',15,'white',12,30,'fred')
+		if (draw) draw()
 	},
 	select_layer: function(layer) {
 		Fred.active_layer = layer
@@ -167,17 +174,19 @@ Fred = {
 		$H(Fred.active_tool).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
 				if (method == ('on_'+event)) {
-					Fred.stop_observing(event,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					Fred.stop_observing(event,Fred.active_tool.listeners.get(method))
 				}
 			},this)
 			if (method == 'draw') Fred.stop_observing('fred:postdraw',Fred.active_tool.draw)
 		},this)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
+		Fred.active_tool.listeners = new Hash
 		$H(Fred.tools[tool]).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
 				if (method == ('on_'+event)) {
-					Fred.observe(event,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					Fred.active_tool.listeners.set(method,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
+					Fred.observe(event,Fred.active_tool.listeners.get(method))
 				}
 			},this)
 			if (method == 'draw') Fred.observe('fred:postdraw',Fred.active_tool.draw.bindAsEventListener(Fred.active_tool))
@@ -426,12 +435,15 @@ Fred.Group = Class.create({
 	},
 })
 Fred.Image = Class.create({
-	initialize: function(x,y,src,scale) {
-		this.x = x
-		this.y = y
+	/*
+	 * Create a new image with Fred.Image.new(img_url). Additional parameters are optional.
+	 */
+	initialize: function(src,x,y,r,scale) {
+		this.x = x || Fred.width/2
+		this.y = y || Fred.height/2
+		this.r = r || 0 // rotation
+		this.scale = scale || 0.25
 		this.src = src
-		this.scale = 0.25
-		this.r = 0 // rotation
 		if (src && typeof src == 'string') {
 			this.src = src
 			this.image = new Image
@@ -678,7 +690,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	}
 })
 
-Fred.tools.import = new Fred.Tool('select & manipulate objects',{
+Fred.tools.place = new Fred.Tool('select & manipulate objects',{
 	select: function() {
 	},
 	deselect: function() {
@@ -686,7 +698,7 @@ Fred.tools.import = new Fred.Tool('select & manipulate objects',{
 	image: function(uri,x,y) {
 		x = x || Fred.width/2
 		y = y || Fred.height/2
-		this.image_obj = new Fred.Image(x,y,uri)
+		this.image_obj = new Fred.Image(uri,x,y)
 		Fred.add(this.image_obj)
 	},
 	prompt: function() {

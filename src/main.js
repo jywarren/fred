@@ -53,10 +53,14 @@ Fred = {
 		var whtrbtobj
 		// Initialize other modules which are waiting for Fred to be ready
 		Fred.keys.initialize()
+		// Autodetect in-html setup() and draw() calls
+		try { setup = setup || false } catch(e) { setup = false }
+		try { draw = draw || false } catch(e) { draw = false }
 		if (setup) setup()
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
+		Fred.resize(Fred.width,Fred.height)
 		//calculate fps:
 		Fred.timestamp = Fred.date.getTime()
 		Fred.times.unshift(Fred.timestamp)
@@ -157,7 +161,6 @@ Fred = {
 		$H(Fred.active_tool).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
 				if (method == ('on_'+event)) {
-					console.log(event+'#'+Fred.active_tool[method])
 					Fred.stop_observing(event,Fred.active_tool.listeners.get(method))
 				}
 			},this)
