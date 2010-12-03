@@ -137,6 +137,14 @@ Fred = {
 			layer.element.height = Fred.height
 		})
 	},
+	is_object: function(supposed_object) {
+		var types = [Fred.Polygon,Fred.Group,Fred.Image]
+		var passes = false //assume no
+		types.each(function(type) {
+			if (supposed_object instanceof type) passes = true
+		},this)
+		return passes
+	},
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,
@@ -170,29 +178,48 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = false
 	},
+	/*
+	 * Deactivate old listeners. Can be run on any object with
+	 * a stored Hash of listeners, e.g. object.listeners.get(key)
+	 */
+	detach_listeners: function(object) {
+		$H(object).keys().each(function(method) {
+			Fred.listeners.each(function(event) {
+				if (method == ('on_'+event)) {
+					Fred.stop_observing(event,object.listeners.get(method))
+				}
+			},this)
+			if (method == 'draw') Fred.stop_observing('fred:postdraw',object.draw)
+		},this)
+	},
+	/*
+	 * Autodetect and activate listeners for any object. Object will receive
+	 * a stored Hash of listeners, e.g. object.listeners.get(key).
+	 * If object already has such a hash it's stripped of listeners, and reattached
+	 * from scratch.
+	 */
+	attach_listeners: function(object) {
+		if (Object.isHash(object.listeners)) {
+			Fred.detach_listeners(object)
+		}
+		object.listeners = new Hash
+		$H(object).keys().each(function(method) {
+			Fred.listeners.each(function(event) {
+				if (method == ('on_'+event)) {
+					object.listeners.set(method,object[method].bindAsEventListener(object))
+					Fred.observe(event,object.listeners.get(method))
+				}
+			},this)
+			if (method == 'draw') Fred.observe('fred:postdraw',object.draw.bindAsEventListener(object))
+		})
+	},
 	select_tool: function(tool) {
 		console.log('selecting '+tool)
 		if (Fred.active_tool) Fred.active_tool.deselect()
-		$H(Fred.active_tool).keys().each(function(method) {
-			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
-					Fred.stop_observing(event,Fred.active_tool.listeners.get(method))
-				}
-			},this)
-			if (method == 'draw') Fred.stop_observing('fred:postdraw',Fred.active_tool.draw)
-		},this)
+		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
-		Fred.active_tool.listeners = new Hash
-		$H(Fred.tools[tool]).keys().each(function(method) {
-			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
-					Fred.active_tool.listeners.set(method,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
-					Fred.observe(event,Fred.active_tool.listeners.get(method))
-				}
-			},this)
-			if (method == 'draw') Fred.observe('fred:postdraw',Fred.active_tool.draw.bindAsEventListener(Fred.active_tool))
-		})
+		Fred.attach_listeners(Fred.active_tool)
 	},
 	move: function(object,x,y,absolute) {
 		if (object.move) {
@@ -257,6 +284,27 @@ Fred.Layer = Class.create({
 		}
 	}
 })
+Fred.selection = false
+Fred.selector = {
+	history: [],
+	set_under_pointer: function() {
+		this.set(Fred.pointer_x,Fred.pointer_y)
+	},
+	set: function(x,y) {
+		this.clear()
+		Fred.objects.each(function(obj){
+			if (!Fred.selection && Fred.is_object(obj)) {
+				if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
+					Fred.selection = obj
+				}
+			}
+		},this)
+	},
+	clear: function() {
+		this.history.push(Fred.selection)
+		Fred.selection = false
+	}
+}
 
 Fred.Point = Class.create({
 	initialize: function(x,y) {
@@ -548,40 +596,35 @@ Fred.Tool = Class.create({
 	},
 })
 
-Fred.tools.select = new Fred.Tool('select & manipulate objects',{
+Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	select: function() {
 	},
 	deselect: function() {
 	},
 	on_dblclick: function() {
-
+		if (Fred.selection) {
+			var existing = Fred.selection.script || "on_mouseup: function() { console.log('hi') }"
+			input = prompt("Edit this object's code:",existing)
+			if (input != null) Fred.selection.script = ("{"+input+"}").evalJSON()
+			Fred.attach_listeners(Fred.selection.script)
+		}
 	},
 	on_mousedown: function() {
-		this.selected_object = false
-		Fred.active_layer.objects.each(function(object){
-			var selectables = [Fred.Polygon,Fred.Group]
-			if (object instanceof Fred.Polygon || object instanceof Fred.Group) {
-				if (Fred.Geometry.is_point_in_poly(object.points,Fred.pointer_x,Fred.pointer_y)) {
-					this.selected_object = object
-					this.selected_object_x = object.x
-					this.selected_object_y = object.y
-					this.click_x = Fred.pointer_x
-					this.click_y = Fred.pointer_y
-				}
-			}
-		},this)
+		Fred.selector.set_under_pointer()
+		this.click_x = Fred.pointer_x
+		this.click_y = Fred.pointer_y
 	},
 	on_mousemove: function() {
-		if (this.selected_object && Fred.drag) {
-			var x = this.selected_object_x + Fred.pointer_x - this.click_x
-			var y = this.selected_object_y + Fred.pointer_y - this.click_y
-			Fred.move(this.selected_object,x,y,true)
+		if (Fred.selection && Fred.drag) {
+			var x = Fred.selection.x + Fred.pointer_x - this.click_x
+			var y = Fred.selection.y + Fred.pointer_y - this.click_y
+			Fred.move(Fred.selection,x,y,true)
 		}
 	},
 	on_mouseup: function() {
-		if (this.selected_object && Fred.drag) {
-			this.selected_object.refresh()
-			this.selected_object = false
+		if (Fred.selection && Fred.drag) {
+			Fred.selector.refresh()
+			Fred.selector.clear()
 		}
 	},
 	on_touchstart: function(event) {
@@ -772,7 +815,7 @@ Fred.keys = {
 		'control': false,
 	}),
 	master: $H({
-		's': function(){ Fred.select_tool('select') },
+		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
 	}),
 	current: $H({

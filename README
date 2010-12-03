@@ -11,11 +11,10 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
-- stop_observing() is not working, tools don't deselect properly
-
 - .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
 	- generates an on_drag() call
 	- or default to polygon is_mousewithin()
+- revise on_mousedown to only fire when pointer is within. function($super) { $super() } ?
 - text in polygons, text tool to edit text, 
 	- doubleclick in select tool to switch to text tool
 - styling in CSS-like syntax (like Cartagen)
@@ -24,10 +23,11 @@ To-do:
 	- try removeing Fred.resize() entirely
 - alias events like on_touchstart > on_mousedown
 - color, linewidth, fill style panel, swipe open?
+	- this is the nascent Fred.Tray class. Jeff's workin on it
 - tool selection for mobile devices
 - line 73 of pen.js shouldn't be necessary - modifier key not turning off
 - shift key locks line drawing to 45 degree angles
-- select tool!
+- dragging for select tool
 	- clicking on bezier polygons
 	- clicking on bezier lines: http://algorithmist.wordpress.com/2008/08/15/closest-point-on-bezier-code/
 

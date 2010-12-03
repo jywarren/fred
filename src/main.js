@@ -122,6 +122,14 @@ Fred = {
 			layer.element.height = Fred.height
 		})
 	},
+	is_object: function(supposed_object) {
+		var types = [Fred.Polygon,Fred.Group,Fred.Image]
+		var passes = false //assume no
+		types.each(function(type) {
+			if (supposed_object instanceof type) passes = true
+		},this)
+		return passes
+	},
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,
@@ -155,31 +163,49 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = false
 	},
+	/*
+	 * Deactivate old listeners. Can be run on any object with 
+	 * a stored Hash of listeners, e.g. object.listeners.get(key)
+	 */
+	detach_listeners: function(object) {
+		$H(object).keys().each(function(method) {
+			Fred.listeners.each(function(event) {
+				if (method == ('on_'+event)) {
+					Fred.stop_observing(event,object.listeners.get(method))
+				}
+			},this)
+			if (method == 'draw') Fred.stop_observing('fred:postdraw',object.draw)
+		},this)
+	},
+	/*
+	 * Autodetect and activate listeners for any object. Object will receive 
+	 * a stored Hash of listeners, e.g. object.listeners.get(key).
+	 * If object already has such a hash it's stripped of listeners, and reattached
+	 * from scratch.
+	 */
+	attach_listeners: function(object) {
+		if (Object.isHash(object.listeners)) {
+			Fred.detach_listeners(object)
+		}
+		object.listeners = new Hash
+		// Scan tool for on_foo listeners, connect them to available events:
+		$H(object).keys().each(function(method) {
+			Fred.listeners.each(function(event) {
+				if (method == ('on_'+event)) {
+					object.listeners.set(method,object[method].bindAsEventListener(object))
+					Fred.observe(event,object.listeners.get(method))
+				}
+			},this)
+			if (method == 'draw') Fred.observe('fred:postdraw',object.draw.bindAsEventListener(object))
+		})
+	},
 	select_tool: function(tool) {
 		console.log('selecting '+tool)
 		if (Fred.active_tool) Fred.active_tool.deselect()
-		// Deactivate old listeners
-		$H(Fred.active_tool).keys().each(function(method) {
-			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
-					Fred.stop_observing(event,Fred.active_tool.listeners.get(method))
-				}
-			},this)
-			if (method == 'draw') Fred.stop_observing('fred:postdraw',Fred.active_tool.draw)
-		},this)
+		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
-		Fred.active_tool.listeners = new Hash
-		// Scan tool for on_foo listeners, connect them to available events:
-		$H(Fred.tools[tool]).keys().each(function(method) {
-			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
-					Fred.active_tool.listeners.set(method,Fred.active_tool[method].bindAsEventListener(Fred.active_tool))
-					Fred.observe(event,Fred.active_tool.listeners.get(method))
-				}
-			},this)
-			if (method == 'draw') Fred.observe('fred:postdraw',Fred.active_tool.draw.bindAsEventListener(Fred.active_tool))
-		})
+		Fred.attach_listeners(Fred.active_tool)
 	},
 	/**
 	 * Moves the object (all its points as object.points, including beziers)
@@ -235,6 +261,7 @@ console.error = console.error || function(){};
 console.info = console.info || function(){};
 
 //= require <layer>
+//= require <selector>
 
 //= require <primitives/point>
 //= require <primitives/polygon>
@@ -242,7 +269,7 @@ console.info = console.info || function(){};
 //= require <primitives/image>
 
 //= require <tools/tool>
-//= require <tools/select>
+//= require <tools/edit>
 //= require <tools/pen>
 //= require <tools/place>
 

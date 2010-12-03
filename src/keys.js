@@ -15,7 +15,7 @@ Fred.keys = {
 	}),
 	// create the main/default keybindings here; they will not be affected by tool-specific keybindings
 	master: $H({
-		's': function(){ Fred.select_tool('select') },
+		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
 	}),
 	current: $H({
