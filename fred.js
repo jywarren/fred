@@ -94,6 +94,7 @@ Fred = {
 		Fred.active_layer = layer
 		$C = Fred.active_layer.canvas
 		Fred.objects = Fred.active_layer.objects
+		Fred.canvas = Fred.active_layer.canvas
 	},
 	add: function(obj) {
 		this.objects.push(obj)
@@ -221,6 +222,12 @@ Fred = {
 		else Fred.element.stopObserving(a,b,c)
 	},
 }
+
+if (!window.console) console = {};
+console.log = console.log || function(){};
+console.warn = console.warn || function(){};
+console.error = console.error || function(){};
+console.info = console.info || function(){};
 
 Fred.Layer = Class.create({
 	initialize: function(name,args) {

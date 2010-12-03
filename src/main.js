@@ -77,6 +77,7 @@ Fred = {
 		Fred.active_layer = layer
 		$C = Fred.active_layer.canvas
 		Fred.objects = Fred.active_layer.objects
+		Fred.canvas = Fred.active_layer.canvas
 	},
 	add: function(obj) {
 		this.objects.push(obj)
