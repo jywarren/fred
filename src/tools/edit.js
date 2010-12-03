@@ -1,6 +1,10 @@
 // Default editing tool -- selection, translation, rotation, etc.
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	select: function() {
+		Fred.keys.add('g',function(){
+			console.log('grouping')
+			new Fred.Group(Fred.selection)
+		})
 		// here go things which must happen when the tool is deactivated
 	},
 	deselect: function() {

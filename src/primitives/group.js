@@ -1,19 +1,30 @@
 // Allows manipulation of groups of objects
 Fred.Group = Class.create({
-	initialize: function(members) {
-		this.members = members
-		// Remove members from active layer
+	initialize: function(members,x,y) {
+		if (!Object.isArray(members)) {
+			Fred.error('Fred.Group requires an array.')
+		} else {
+			this.members = members
+			// Remove members from active layer
+			this.members.each(function(member){
+				Fred.remove(member)
+			})
+			Fred.add(this)
 		
-		// Calculate bounding box
-		// this.x = 
-		// this.y = 
-		this.r = 0 // no rotation
-		this.selected = true
+			// Calculate bounding box
+			// ...
+	
+			// Group context origin:
+			this.x = x || 0
+			this.y = y || 0
+			this.r = 0 // no rotation
+			this.selected = true
+		}
 	},
 	draw: function() {
 		save()
-		// transform(x,y)
-		// rotate(r)
+		translate(x,y)
+		rotate(r)
 			this.members.each(function(member) {
 				member.draw()
 			},this)

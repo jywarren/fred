@@ -258,6 +258,9 @@ Fred = {
 		if (a == 'keypress' || a == 'keyup') document.stopObserving(a,b,c)
 		else Fred.element.stopObserving(a,b,c)
 	},
+	error: function(e) {
+		console.log(e)
+	}
 }
 
 if (!window.console) console = {};
@@ -468,14 +471,27 @@ Fred.Polygon = Class.create({
 	}
 })
 Fred.Group = Class.create({
-	initialize: function(members) {
-		this.members = members
+	initialize: function(members,x,y) {
+		if (!Object.isArray(members)) {
+			Fred.error('Fred.Group requires an array.')
+		} else {
+			this.members = members
+			this.members.each(function(member){
+				Fred.remove(member)
+			})
+			Fred.add(this)
 
-		this.r = 0 // no rotation
-		this.selected = true
+
+			this.x = x || 0
+			this.y = y || 0
+			this.r = 0 // no rotation
+			this.selected = true
+		}
 	},
 	draw: function() {
 		save()
+		translate(x,y)
+		rotate(r)
 			this.members.each(function(member) {
 				member.draw()
 			},this)
@@ -611,6 +627,10 @@ Fred.Tool = Class.create({
 
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	select: function() {
+		Fred.keys.add('g',function(){
+			console.log('grouping')
+			new Fred.Group(Fred.selection)
+		})
 	},
 	deselect: function() {
 	},

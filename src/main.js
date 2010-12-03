@@ -263,6 +263,10 @@ Fred = {
 		if (a == 'keypress' || a == 'keyup') document.stopObserving(a,b,c)
 		else Fred.element.stopObserving(a,b,c)
 	},
+	// Eventually these errors will pop up in the user environment.
+	error: function(e) {
+		console.log(e)
+	}
 }
 
 // For debugging purposes

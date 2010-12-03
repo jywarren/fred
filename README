@@ -11,6 +11,8 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
+- Group class which can self-contain and matrix transform
+	- grouping key binding 'g' is not working on .select()
 - Fred.drag is broken. Edit tool is using Fred.tools.edit.dragging
 - .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
 	- generates an on_drag() call
@@ -19,7 +21,6 @@ To-do:
 - text in polygons, text tool to edit text, 
 	- doubleclick in select tool to switch to text tool
 - styling in CSS-like syntax (like Cartagen)
-- Group class which can self-contain and matrix transform
 - fix android viewport width/height
 	- try removeing Fred.resize() entirely
 - alias events like on_touchstart > on_mousedown
