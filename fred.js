@@ -224,16 +224,23 @@ Fred = {
 	move: function(object,x,y,absolute) {
 		if (object.move) {
 			object.move(x,y,absolute)
-		} else if (object instanceof Fred.Polygon || object instanceof Fred.Group) {
+		} else if (Fred.is_object(object)) {
 			object.points.each(function(point){
 				if (absolute) {
-					point.x = x
-					point.y = y
+					point.x = point.x-object.x+x
+					point.y = point.y-object.y+y
 				} else {
 					point.x += x
 					point.y += y
 				}
 			},this)
+			if (absolute) {
+				object.x = x
+				object.y = y
+			} else {
+				object.x += x
+				object.y += y
+			}
 		}
 	},
 	observe: function(a,b,c) {
@@ -306,6 +313,9 @@ Fred.selector = {
 	}
 }
 
+Fred.Object = Class.create({
+
+})
 Fred.Point = Class.create({
 	initialize: function(x,y) {
 		this.x = x
@@ -613,18 +623,20 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		Fred.selector.set_under_pointer()
 		this.click_x = Fred.pointer_x
 		this.click_y = Fred.pointer_y
+		this.selection_orig_x = Fred.selection.x
+		this.selection_orig_y = Fred.selection.y
+		this.dragging = true
 	},
 	on_mousemove: function() {
-		if (Fred.selection && Fred.drag) {
-			var x = Fred.selection.x + Fred.pointer_x - this.click_x
-			var y = Fred.selection.y + Fred.pointer_y - this.click_y
+		if (Fred.selection && this.dragging) {
+			var x = this.selection_orig_x + Fred.pointer_x - this.click_x
+			var y = this.selection_orig_y + Fred.pointer_y - this.click_y
 			Fred.move(Fred.selection,x,y,true)
 		}
 	},
 	on_mouseup: function() {
-		if (Fred.selection && Fred.drag) {
-			Fred.selector.refresh()
-			Fred.selector.clear()
+		if (Fred.selection && this.dragging) {
+			this.dragging = false
 		}
 	},
 	on_touchstart: function(event) {
@@ -738,6 +750,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		this.polygon.selected = false
 		this.polygon = false
 		Fred.stop_observing('fred:postdraw',this.draw)
+		Fred.select_tool('edit')
 	}
 })
 

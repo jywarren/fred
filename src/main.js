@@ -214,19 +214,29 @@ Fred = {
 	 * current position.
 	 */
 	move: function(object,x,y,absolute) {
+		// If the object has its own way of moving, this is preferred.
+		// Thinking of tweening, acceleration, recursion
 		if (object.move) {
 			object.move(x,y,absolute)
-		} else if (object instanceof Fred.Polygon || object instanceof Fred.Group) {
+		} else if (Fred.is_object(object)) {
 			// we know how to deal with these
 			object.points.each(function(point){
 				if (absolute) {
-					point.x = x
-					point.y = y
+					point.x = point.x-object.x+x
+					point.y = point.y-object.y+y
 				} else {
 					point.x += x
 					point.y += y
 				}
 			},this)
+			// must correct the object x,y also
+			if (absolute) {
+				object.x = x
+				object.y = y
+			} else {
+				object.x += x
+				object.y += y
+			}
 		}
 	},
         /**
@@ -263,6 +273,7 @@ console.info = console.info || function(){};
 //= require <layer>
 //= require <selector>
 
+//= require <primitives/object>
 //= require <primitives/point>
 //= require <primitives/polygon>
 //= require <primitives/group>

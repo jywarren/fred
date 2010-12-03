@@ -121,6 +121,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		this.polygon.selected = false
 		this.polygon = false
 		Fred.stop_observing('fred:postdraw',this.draw)
+		Fred.select_tool('edit')
 	}
 })
 

@@ -20,18 +20,20 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		// record offset of x,y from mouse
 		this.click_x = Fred.pointer_x
 		this.click_y = Fred.pointer_y
+		this.selection_orig_x = Fred.selection.x
+		this.selection_orig_y = Fred.selection.y
+		this.dragging = true
 	},
 	on_mousemove: function() {
-		if (Fred.selection && Fred.drag) {
-			var x = Fred.selection.x + Fred.pointer_x - this.click_x
-			var y = Fred.selection.y + Fred.pointer_y - this.click_y
+		if (Fred.selection && this.dragging) {
+			var x = this.selection_orig_x + Fred.pointer_x - this.click_x
+			var y = this.selection_orig_y + Fred.pointer_y - this.click_y
 			Fred.move(Fred.selection,x,y,true)
 		}
 	},
 	on_mouseup: function() {
-		if (Fred.selection && Fred.drag) {
-			Fred.selector.refresh()
-			Fred.selector.clear()
+		if (Fred.selection && this.dragging) {
+			this.dragging = false
 		}
 	},
 	on_touchstart: function(event) {

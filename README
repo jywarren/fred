@@ -11,6 +11,7 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
+- Fred.drag is broken. Edit tool is using Fred.tools.edit.dragging
 - .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
 	- generates an on_drag() call
 	- or default to polygon is_mousewithin()
