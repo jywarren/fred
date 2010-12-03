@@ -174,7 +174,7 @@ Fred = {
 					Fred.stop_observing(event,object.listeners.get(method))
 				}
 			},this)
-			if (method == 'draw') Fred.stop_observing('fred:postdraw',object.draw)
+			if (method == 'draw') Fred.stop_observing('fred:postdraw',object.listeners.get('draw'))
 		},this)
 	},
 	/*
@@ -196,7 +196,10 @@ Fred = {
 					Fred.observe(event,object.listeners.get(method))
 				}
 			},this)
-			if (method == 'draw') Fred.observe('fred:postdraw',object.draw.bindAsEventListener(object))
+			if (method == 'draw') {
+				object.listeners.set('draw',object['draw'].bindAsEventListener(object))
+				Fred.observe('fred:postdraw',object.listeners.get('draw'))
+			}
 		})
 	},
 	select_tool: function(tool) {
