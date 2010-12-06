@@ -4,8 +4,7 @@ Fred.Geometry = {
 		return Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2))
 	},
 	/**
-	 * Determines of a point is in a polygon. This should be rewritten at some point, as the source
-	 * is really nasty.
+	 * Determines of a point is in a polygon. 
 	 * @param {Node[]} poly Array of nodes that make up the polygon
 	 * @param {Number} x    X-coordinate of the point to check for
 	 * @param {Number} y    Y-coordinate of the point to check for
@@ -73,5 +72,13 @@ Fred.Geometry = {
                 })
                 if (signed) return area/2
                 else return Math.abs(area/2)
-        }
+        },
+	/**
+	 * Determines whether poly_a and poly_b overlap, where
+	 * each has array poly.points with point.x and point.y
+	 */
+	does_poly_overlap_poly: function(poly_a,poly_b) {
+		// easier said than done
+		// ...
+	}
 }

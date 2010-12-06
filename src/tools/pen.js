@@ -25,7 +25,6 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		var bezier = this.polygon.in_bezier()
 		this.clicked_bezier = bezier[0]
 		this.clicked_bezier_parent = bezier[1] 
-			console.log('new point')
 		// unless it's the FIRST point, allow tool to drag it instead:
 		if (this.clicked_point != false && this.clicked_point != this.polygon.points[0]) {
 			// if control key is down, start a bezier!

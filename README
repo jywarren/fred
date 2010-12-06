@@ -17,9 +17,12 @@ To-do:
 - .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
 	- generates an on_drag() call
 	- or default to polygon is_mousewithin()
+- dragging is not absolute... buggy. 
+	- dragging box doesn't go on draw... just on mousemove
 - revise on_mousedown to only fire when pointer is within. function($super) { $super() } ?
 - text in polygons, text tool to edit text, 
 	- doubleclick in select tool to switch to text tool
+- url hash rewriting, to generate permalinks for different states?
 - styling in CSS-like syntax (like Cartagen)
 - fix android viewport width/height
 	- try removeing Fred.resize() entirely
