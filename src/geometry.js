@@ -24,7 +24,7 @@ Fred.Geometry = {
 	},
 	/**
 	 * Finds the centroid of a polygon
-	 * @param {Node[]} polygon Array of nodes that make up the polygon
+	 * @param {Node[]} polygon Array of points that make up the polygon
 	 * @return A tuple, in [x, y] format, with the coordinates of the centroid
 	 * @type Number[]
 	 */

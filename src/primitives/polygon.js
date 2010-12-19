@@ -51,11 +51,18 @@ Fred.Polygon = Class.create({
 		},this)
 		return is_bezier
 	},
-	// run after editing -- refreshes things like area, centroid, x and y
-	refresh: function() {
-		centroid = Fred.Geometry.poly_centroid(this.points)
-		this.x = centroid[0]
-		this.y = centroid[1]
+	// Sets the x,y of the poly to its centroid. Doesn't work right now.
+	set_centroid: function() {
+		// Centroid is not working, so we're just going to average all points:
+		this.x = 0
+		this.points.each(function(point){ this.x += point.x },this)
+		this.x /= this.points.length
+		this.y = 0
+		this.points.each(function(point){ this.y += point.y },this)
+		this.y /= this.points.length
+		//centroid = Fred.Geometry.poly_centroid(this.points)
+		//this.x = centroid[0]
+		//this.y = centroid[1]
 	},
 	// Checks if the mouse is inside a control point
 	// and returns the control point or false
@@ -128,6 +135,7 @@ Fred.Polygon = Class.create({
 				restore()
 			},this)
 			if (this.selected) {
+				// draw beziers too
 				this.points.each(function(point){
 					$H(point.bezier).values().each(function(bezier){
 						if (bezier) {
@@ -139,13 +147,22 @@ Fred.Polygon = Class.create({
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
 								fillStyle('#a00')
-								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius*2,Fred.click_radius*2)
+								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
 							restore()
 						}
 					},this)
 				},this)
+			}
+			// draw x,y of the polygon
+			if (this.selected) {
+				save()
+					strokeStyle('#a00')
+					opacity(0.2)
+					lineWidth(2)
+					strokeCircle(this.x,this.y,Fred.click_radius)
+				restore()
 			}
 		}
 	}

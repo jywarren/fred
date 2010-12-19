@@ -322,6 +322,7 @@ Fred.selection = {
 			this.empty = false
 			obj.selected = true
 		}
+		this.recalc_xy()
 	},
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
@@ -334,6 +335,7 @@ Fred.selection = {
 			}
 		},this)
 		this.empty = (this.size() == 0)
+		this.recalc_xy()
 		return obj
 	},
 	clear: function() {
@@ -343,9 +345,22 @@ Fred.selection = {
 		},this)
 		this.empty = true
 		this.members = []
+		this.recalc_xy()
 	},
 	size: function() {
 		return this.members.length
+	},
+	recalc_xy: function() {
+		this.x = 0
+		this.y = 0
+		if (!this.empty) {
+			this.members.each(function(member) {
+				this.x += member.x
+				this.y += member.y
+			},this)
+			this.x = this.x/this.members.length
+			this.y = this.y/this.members.length
+		}
 	},
 	move: function(x,y,absolute) {
 		this.members.each(function(obj) {
@@ -354,22 +369,29 @@ Fred.selection = {
 			} else if (Fred.is_object(obj)) {
 				obj.points.each(function(point){
 					if (absolute) {
-						point.x = point.x-obj.x+x
-						point.y = point.y-obj.y+y
+						point.x = (point.x-Fred.selection.x)+x
+						point.y = (point.y-Fred.selection.y)+y
 					} else {
 						point.x += x
 						point.y += y
 					}
 				},this)
 				if (absolute) {
-					obj.x = x
-					obj.y = y
+					obj.x += x-Fred.selection.x
+					obj.y += y-Fred.selection.y
 				} else {
 					obj.x += x
 					obj.y += y
 				}
 			}
 		},this)
+		if (absolute) {
+			this.x = x
+			this.y = y
+		} else {
+			this.x += x
+			this.y += y
+		}
 	},
 	history: [],
 	get_under_pointer: function() {
@@ -381,11 +403,25 @@ Fred.selection = {
 			if (this.empty && Fred.is_object(obj)) {
 				if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
 					Fred.selection.add(obj)
-				}
+				} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
 			}
 		},this)
 		if (this.empty) return false
 		else return this.members
+	},
+	is_point_inside: function(x,y) {
+		var inside = false
+		if (!this.empty) {
+			this.members.each(function(obj){
+				if (Fred.is_object(obj)) {
+					if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
+						console.log('inside')
+						inside = true
+					} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
+				}
+			},this)
+		}
+		return inside
 	},
 }
 
@@ -450,10 +486,13 @@ Fred.Polygon = Class.create({
 		},this)
 		return is_bezier
 	},
-	refresh: function() {
-		centroid = Fred.Geometry.poly_centroid(this.points)
-		this.x = centroid[0]
-		this.y = centroid[1]
+	set_centroid: function() {
+		this.x = 0
+		this.points.each(function(point){ this.x += point.x },this)
+		this.x /= this.points.length
+		this.y = 0
+		this.points.each(function(point){ this.y += point.y },this)
+		this.y /= this.points.length
 	},
 	in_point: function() {
 		if (this.points) {
@@ -529,13 +568,21 @@ Fred.Polygon = Class.create({
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
 								fillStyle('#a00')
-								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius*2,Fred.click_radius*2)
+								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
 							restore()
 						}
 					},this)
 				},this)
+			}
+			if (this.selected) {
+				save()
+					strokeStyle('#a00')
+					opacity(0.2)
+					lineWidth(2)
+					strokeCircle(this.x,this.y,Fred.click_radius)
+				restore()
 			}
 		}
 	}
@@ -721,15 +768,23 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_mousedown: function() {
 		this.click_x = Fred.pointer_x
 		this.click_y = Fred.pointer_y
-		Fred.selection.clear()
-		if (Fred.selection.get_under_pointer()) {
-			this.dragging_object = true
-			this.selection_orig_x = Fred.selection.x
-			this.selection_orig_y = Fred.selection.y
+		if (Fred.selection.is_point_inside(Fred.pointer_x,Fred.pointer_y)) {
+				this.dragging_object = true
+				this.selection_orig_x = Fred.selection.x
+				this.selection_orig_y = Fred.selection.y
 		} else {
-			this.dragging_selection = true
-			this.selection_box.points[0].x = Fred.pointer_x
-			this.selection_box.points[0].y = Fred.pointer_y
+			Fred.selection.clear()
+			if (Fred.selection.get_under_pointer()) {
+				this.dragging_object = true
+				this.selection_orig_x = Fred.selection.x
+				this.selection_orig_y = Fred.selection.y
+			} else {
+				this.dragging_selection = true
+				this.selection_box.points[0].x = Fred.pointer_x
+				this.selection_box.points[0].y = Fred.pointer_y
+				this.selection_box.points[3].x = Fred.pointer_x
+				this.selection_box.points[1].y = Fred.pointer_y
+			}
 		}
 	},
 	on_mousemove: function() {
@@ -744,6 +799,11 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 			this.selection_box.points[3].y = Fred.pointer_y
 			this.selection_box.width = Fred.pointer_x-this.selection_box.points[0].x
 			this.selection_box.height = Fred.pointer_y-this.selection_box.points[0].y
+			this.get_selection_box()
+		}
+	},
+	draw: function() {
+		if (this.dragging_selection) {
 			save()
 				lineWidth(1)
 				opacity(0.7)
@@ -752,8 +812,6 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 				opacity(0.3)
 				rect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
 			restore()
-
-			this.get_selection_box()
 		}
 	},
 	on_mouseup: function() {
@@ -769,16 +827,17 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_touchend: function(event) {
 		this.on_mouseup(event)
 	},
-	draw: function() {
-	},
 	get_selection_box: function() {
 		Fred.selection.clear()
+		var whole_objects = (this.selection_box.points[0].x < this.selection_box.points[1].x)
 		Fred.objects.each(function(obj){
 			var all_inside = true
+			var one_inside = false
 			obj.points.each(function(point){
-				if (!Fred.Geometry.is_point_in_poly(this.selection_box.points,point.x,point.y)) all_inside = false
+				if (Fred.Geometry.is_point_in_poly(this.selection_box.points,point.x,point.y)) one_inside = true
+				else all_inside = false
 			},this)
-			if (all_inside) Fred.selection.add(obj)
+			if ((all_inside && whole_objects) || (one_inside && !whole_objects)) Fred.selection.add(obj)
 		},this)
 	}
 })
@@ -835,6 +894,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	},
 	on_dblclick: function() {
 		if (this.polygon && this.polygon.points.length > 1) {
+			this.polygon.set_centroid()
 			this.complete_polygon()
 		}
 	},
@@ -875,7 +935,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	},
 	complete_polygon: function() {
 		Fred.add(this.polygon)
-		this.polygon.refresh()
+		this.polygon.set_centroid()
 		this.polygon.selected = false
 		this.polygon = false
 		Fred.stop_observing('fred:postdraw',this.draw)

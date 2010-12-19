@@ -17,6 +17,7 @@ Fred.selection = {
 			this.empty = false
 			obj.selected = true
 		}
+		this.recalc_xy()
 	},
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
@@ -29,6 +30,7 @@ Fred.selection = {
 			}
 		},this)
 		this.empty = (this.size() == 0)
+		this.recalc_xy()
 		return obj
 	},
 	clear: function() {
@@ -38,9 +40,23 @@ Fred.selection = {
 		},this)
 		this.empty = true
 		this.members = []
+		this.recalc_xy()
 	},
 	size: function() {
 		return this.members.length
+	},
+	recalc_xy: function() {
+		this.x = 0
+		this.y = 0
+		if (!this.empty) {
+			// average the seleted objects' positions
+			this.members.each(function(member) {
+				this.x += member.x
+				this.y += member.y
+			},this)
+			this.x = this.x/this.members.length
+			this.y = this.y/this.members.length
+		}
 	},
 	/**
 	 * Moves all member objects' points either to an absolute 
@@ -57,8 +73,8 @@ Fred.selection = {
 				// we know how to deal with these
 				obj.points.each(function(point){
 					if (absolute) {
-						point.x = point.x-obj.x+x
-						point.y = point.y-obj.y+y
+						point.x = (point.x-Fred.selection.x)+x
+						point.y = (point.y-Fred.selection.y)+y
 					} else {
 						point.x += x
 						point.y += y
@@ -66,14 +82,21 @@ Fred.selection = {
 				},this)
 				// must correct the object x,y also
 				if (absolute) {
-					obj.x = x
-					obj.y = y
+					obj.x += x-Fred.selection.x
+					obj.y += y-Fred.selection.y
 				} else {
 					obj.x += x
 					obj.y += y
 				}
 			}
 		},this)
+		if (absolute) {
+			this.x = x
+			this.y = y
+		} else {
+			this.x += x
+			this.y += y
+		}
 	},
 	// a collection of past selections
 	history: [],
@@ -88,12 +111,30 @@ Fred.selection = {
 			// test if we have one already
 			// and if it has points we can use to test 'insideness'
 			if (this.empty && Fred.is_object(obj)) {
+				// later replace this with a general is_point_in_obj()
 				if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
 					Fred.selection.add(obj)
-				}
+				} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
+				//}
 			}
 		},this)
 		if (this.empty) return false
 		else return this.members
+	},
+	is_point_inside: function(x,y) {
+		var inside = false
+		if (!this.empty) {
+			this.members.each(function(obj){
+				if (Fred.is_object(obj)) {
+					// later replace this with a general is_point_in_obj()
+					if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
+						console.log('inside')
+						inside = true
+					} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
+					//}
+				}
+			},this)
+		}
+		return inside
 	},
 }

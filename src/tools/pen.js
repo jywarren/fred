@@ -62,6 +62,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	},
 	on_dblclick: function() {
 		if (this.polygon && this.polygon.points.length > 1) {
+			this.polygon.set_centroid()
 			this.complete_polygon()
 		}
 	},
@@ -116,7 +117,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		// move the polygon to the active Fred layer 
 		Fred.add(this.polygon)
 		// stop storing the polygon in the pen tool
-		this.polygon.refresh()
+		this.polygon.set_centroid()
 		this.polygon.selected = false
 		this.polygon = false
 		Fred.stop_observing('fred:postdraw',this.draw)
