@@ -8,6 +8,7 @@ Fred.Polygon = Class.create({
 		this.closed = false
 		this.x = 0
 		this.y = 0
+		this.rotation = 0
 	},
 	name: 'untitled polygon',
 	style: {
@@ -134,6 +135,7 @@ Fred.Polygon = Class.create({
 				}
 				restore()
 			},this)
+			// Appearance when selected:
 			if (this.selected) {
 				// draw beziers too
 				this.points.each(function(point){
@@ -142,11 +144,11 @@ Fred.Polygon = Class.create({
 							save()
 							lineWidth(1)
 							opacity(0.3)
-							strokeStyle('#a00')
+							strokeStyle(Fred.selection_color)
 							moveTo(point.x,point.y)
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
-								fillStyle('#a00')
+								fillStyle(Fred.selection_color)
 								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
@@ -155,13 +157,34 @@ Fred.Polygon = Class.create({
 					},this)
 				},this)
 			}
-			// draw x,y of the polygon
+			// draw center x,y of the polygon
 			if (this.selected) {
 				save()
-					strokeStyle('#a00')
+					strokeStyle(Fred.selection_color)
 					opacity(0.2)
 					lineWidth(2)
 					strokeCircle(this.x,this.y,Fred.click_radius)
+				restore()
+			}
+			// draw rotation indicator
+			if (this.selected && this.closed) {
+				save()
+					strokeStyle(Fred.selection_color)
+					fillStyle(Fred.selection_color)
+					lineWidth(2)
+					opacity(0.2)
+					moveTo(this.x,this.y)
+					this.rotation_point = lineToPolar(this.rotation,50)
+					this.rotation_point.x += this.x
+					this.rotation_point.y += this.y
+					stroke()
+					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
+						opacity(0.4)
+						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
+					} else {
+						opacity(0.2)
+						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
+					}
 				restore()
 			}
 		}

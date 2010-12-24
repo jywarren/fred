@@ -3,6 +3,7 @@
 // Central Fred source file; all other files are linked to from here.
 Fred = {
 	click_radius: 6,
+	selection_color: '#a00',
 	speed: 30,
 	height: '100%',
 	width: '100%',

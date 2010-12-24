@@ -32,6 +32,7 @@ var TimerManager = {
 
 Fred = {
 	click_radius: 6,
+	selection_color: '#a00',
 	speed: 30,
 	height: '100%',
 	width: '100%',
@@ -444,6 +445,7 @@ Fred.Polygon = Class.create({
 		this.closed = false
 		this.x = 0
 		this.y = 0
+		this.rotation = 0
 	},
 	name: 'untitled polygon',
 	style: {
@@ -563,11 +565,11 @@ Fred.Polygon = Class.create({
 							save()
 							lineWidth(1)
 							opacity(0.3)
-							strokeStyle('#a00')
+							strokeStyle(Fred.selection_color)
 							moveTo(point.x,point.y)
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
-								fillStyle('#a00')
+								fillStyle(Fred.selection_color)
 								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
@@ -578,10 +580,30 @@ Fred.Polygon = Class.create({
 			}
 			if (this.selected) {
 				save()
-					strokeStyle('#a00')
+					strokeStyle(Fred.selection_color)
 					opacity(0.2)
 					lineWidth(2)
 					strokeCircle(this.x,this.y,Fred.click_radius)
+				restore()
+			}
+			if (this.selected && this.closed) {
+				save()
+					strokeStyle(Fred.selection_color)
+					fillStyle(Fred.selection_color)
+					lineWidth(2)
+					opacity(0.2)
+					moveTo(this.x,this.y)
+					this.rotation_point = lineToPolar(this.rotation,50)
+					this.rotation_point.x += this.x
+					this.rotation_point.y += this.y
+					stroke()
+					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
+						opacity(0.4)
+						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
+					} else {
+						opacity(0.2)
+						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
+					}
 				restore()
 			}
 		}
@@ -873,6 +895,8 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 			}
 		} else if (this.clicked_bezier) {
 			this.editing_bezier = true
+		} else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
+			this.editing_rotation = true
 		} else {
 			var on_final = (this.polygon.points.length > 1 && ((Math.abs(this.polygon.points[0].x - Fred.pointer_x) < Fred.click_radius) && (Math.abs(this.polygon.points[0].y - Fred.pointer_y) < Fred.click_radius)))
 			if (on_final && this.polygon.points.length > 1) {
@@ -910,6 +934,8 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		} else if (this.editing_bezier) {
 			this.clicked_bezier.x = Fred.pointer_x - this.clicked_bezier_parent.x
 			this.clicked_bezier.y = Fred.pointer_y - this.clicked_bezier_parent.y
+		} else if (this.editing_rotation) {
+
 		}
 	},
 	on_mouseup: function() {
@@ -961,6 +987,11 @@ Fred.tools.place = new Fred.Tool('select & manipulate objects',{
 })
 
 Fred.Geometry = {
+	point_from_polar: function(x,y,t,d) {
+		var dx = d*Math.acos(t)
+		var dy = d*Math.asin(t)
+		return {x:dx+x,y:dy+y}
+	},
 	distance: function(x1,y1,x2,y2) {
 		return Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2))
 	},

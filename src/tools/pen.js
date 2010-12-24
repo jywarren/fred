@@ -39,6 +39,9 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		} else if (this.clicked_bezier) {
 			// edit the bezier
 			this.editing_bezier = true
+		} else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
+			// edit the rotation point
+			this.editing_rotation = true
 		} else {
 			// add a new point
 			// close polygon if you click on first point
@@ -84,6 +87,8 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		} else if (this.editing_bezier) {
 			this.clicked_bezier.x = Fred.pointer_x - this.clicked_bezier_parent.x
 			this.clicked_bezier.y = Fred.pointer_y - this.clicked_bezier_parent.y
+		} else if (this.editing_rotation) {
+			
 		}
 	},
 	on_mouseup: function() {

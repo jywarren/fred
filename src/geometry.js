@@ -1,5 +1,18 @@
 // Geometric utility storage
 Fred.Geometry = {
+	/**
+	 * Determines of a point is in a polygon. 
+	 * @param {Node[]} poly Array of nodes that make up the polygon
+	 * @param {Number} x    X-coordinate of the point to check for
+	 * @return True if the point is inside the polygon, else false
+	 * @type Boolean
+	 */
+	point_from_polar: function(x,y,t,d) {
+		var dx = d*Math.acos(t)
+		var dy = d*Math.asin(t)
+		//$C.lineTo($c.lastPoint.x+dx,$c.lastPoint.y+dy)
+		return {x:dx+x,y:dy+y}
+	},
 	distance: function(x1,y1,x2,y2) {
 		return Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2))
 	},
