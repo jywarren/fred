@@ -14,7 +14,7 @@ var TimerManager = {
 	},
 	run: function() {
 		var start_date = new Date
-		this.f.apply(this.context)
+		if (!this.paused) this.f.apply(this.context)
 		var execution_time = new Date - start_date
 		this.times.unshift(parseInt(execution_time))
 		if (this.times.length > 100) this.times.pop()
@@ -79,7 +79,8 @@ Fred = {
                 try { Fred.local_setup = setup || false } catch(e) { Fred.local_setup = false }
                 try { Fred.local_draw = draw || false } catch(e) { Fred.local_draw = false }
 		if (Fred.local_setup) Fred.local_setup()
-		TimerManager.setup(Fred.draw,this,Fred.speed)
+		if (Fred.local_draw) Fred.local_draw()
+		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
@@ -97,6 +98,16 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
+	},
+	pause: function() {
+		TimerManager.paused = true
+	},
+	resume: function() {
+		if (Fred.static) {
+			Fred.static = false
+			TimerManager.setup(Fred.draw,this,Fred.speed)
+		}
+		TimerManager.paused = false
 	},
 	select_layer: function(layer) {
 		Fred.active_layer = layer
@@ -430,7 +441,6 @@ Fred.selection = {
 }
 
 Fred.Object = Class.create({
-
 })
 Fred.Point = Class.create({
 	initialize: function(x,y) {
@@ -440,7 +450,7 @@ Fred.Point = Class.create({
 		return this
 	},
 })
-Fred.Polygon = Class.create({
+Fred.Polygon = Class.create(Fred.Object,{
 	/*
 	 * By default accepts an array of {x:0,y:0} style point objects, but
 	 * can also accept an array of [x,y] pairs.
@@ -456,18 +466,23 @@ Fred.Polygon = Class.create({
 			},this)
 		}
 		this.selected = false
-		this.closed = false
+		if (points) this.closed = true
+		else this.closed = false
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
 		this.rotation_point = false
+		this.show_highlights = true
 		return this
 	},
 	name: 'untitled polygon',
 	style: {
 		fill: '#ccc',
 		stroke: '#222',
-		lineWidth: 2
+		lineWidth: 2,
+		textsize: 15,
+		textfill: '#222',
+		font: 'georgia',
 	},
 	apply_style: function() {
 		lineWidth(this.style.lineWidth)
@@ -559,7 +574,11 @@ Fred.Polygon = Class.create({
 				fill()
 			}
 			stroke()
+			if (this.text) {
+				drawText(this.style.font,this.style.textsize,this.style.textfill,this.x,this.y,this.text)
+			}
 
+			if (this.show_highlights) {
 			this.points.each(function(point){
 				save()
 				opacity(0.2)
@@ -621,6 +640,7 @@ Fred.Polygon = Class.create({
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}
 				restore()
+			}
 			}
 		}
 	}
@@ -885,6 +905,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	polygon: false,
 	dragging_point: false,
 	creating_bezier: false,
+	sticky: false, // stays on pen tool after creating a polygon
 	keys: $H({
 		'esc': function() { Fred.tools.pen.cancel() }
 	}),
@@ -982,8 +1003,9 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		this.polygon.set_centroid()
 		this.polygon.selected = false
 		this.polygon = false
-		Fred.stop_observing('fred:postdraw',this.draw)
-		Fred.select_tool('edit')
+		if (!this.sticky) {
+			Fred.select_tool('edit')
+		}
 	}
 })
 

@@ -1,5 +1,5 @@
 // Basic, universal Polygon class
-Fred.Polygon = Class.create({
+Fred.Polygon = Class.create(Fred.Object,{
 	/*
 	 * By default accepts an array of {x:0,y:0} style point objects, but
 	 * can also accept an array of [x,y] pairs.
@@ -16,18 +16,23 @@ Fred.Polygon = Class.create({
 			},this)
 		}
 		this.selected = false
-		this.closed = false
+		if (points) this.closed = true
+		else this.closed = false
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
 		this.rotation_point = false
+		this.show_highlights = true
 		return this
 	},
 	name: 'untitled polygon',
 	style: {
 		fill: '#ccc',
 		stroke: '#222',
-		lineWidth: 2
+		lineWidth: 2,
+		textsize: 15,
+		textfill: '#222',
+		font: 'georgia',
 	},
 	apply_style: function() {
 		lineWidth(this.style.lineWidth)
@@ -133,7 +138,11 @@ Fred.Polygon = Class.create({
 			}
 			stroke()
 			// draw text here
+			if (this.text) {
+				drawText(this.style.font,this.style.textsize,this.style.textfill,this.x,this.y,this.text)
+			}
 
+			if (this.show_highlights) { 
 			this.points.each(function(point){
 				save()
 				opacity(0.2)
@@ -199,6 +208,7 @@ Fred.Polygon = Class.create({
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}
 				restore()
+			}
 			}
 		}
 	}

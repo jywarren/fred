@@ -9,27 +9,28 @@
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="viewport" content="width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 </head>
-<body onload="Fred.init({debug:true,logo:true}); //learn how to customize the Fred environment at http://github.com/jywarren/fred">
+<body onload="Fred.init({logo:true,static:true}); //learn how to customize the Fred environment at http://github.com/jywarren/fred">
+
+	<a style="float:right;" href="javascript:void(0);" onClick="Fred.resume()">edit</a>
 
 	<div id="fred"></div>
 
 	<script>
 
-	function setup() {
-		ball = Fred.add(new Fred.Polygon([[0,0],[20,0],[20,20],[0,20]],{complete:true,closed:true}))
-		ball.closed = true
-		ball.complete = true
-		Fred.move(ball,Fred.width/2,0)
-		ball.speed = 1
-		Fred.select_tool('edit')
-	}
+	// a completely static image
 
 	function draw() {
-		if (!Fred.drag) {
-			ball.speed += 1
-			if (Math.abs(ball.speed) > 1) Fred.move(ball,0,ball.speed,false)
-			if (ball.y >= Fred.height-20) ball.speed = Math.abs(ball.speed)*-1
-		}
+		fillStyle('red')
+		translate(Fred.width/2-75, Fred.height/2-75)
+		beginPath()
+		moveTo(75, 40)
+		bezierCurveTo(75, 37, 70, 25, 50, 25)
+		bezierCurveTo(20, 25, 20, 62.5, 20, 62.5)
+		bezierCurveTo(20, 80, 40, 102, 75, 120)
+		bezierCurveTo(110, 102, 130, 80, 130, 62.5)
+		bezierCurveTo(130, 62.5, 130, 25, 100, 25)
+		bezierCurveTo(85, 25, 75, 37, 75, 40)
+		fill()
 	}
 
 	</script>

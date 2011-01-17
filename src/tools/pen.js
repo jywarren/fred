@@ -3,6 +3,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 	polygon: false,
 	dragging_point: false,
 	creating_bezier: false,
+	sticky: false, // stays on pen tool after creating a polygon
 	keys: $H({
 		'esc': function() { Fred.tools.pen.cancel() }
 	}),
@@ -125,8 +126,10 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		this.polygon.set_centroid()
 		this.polygon.selected = false
 		this.polygon = false
-		Fred.stop_observing('fred:postdraw',this.draw)
-		Fred.select_tool('edit')
+		if (!this.sticky) {
+			//Fred.stop_observing('fred:postdraw',this.draw)
+			Fred.select_tool('edit')
+		}
 	}
 })
 

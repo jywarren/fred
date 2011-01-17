@@ -60,8 +60,9 @@ Fred = {
                 try { Fred.local_setup = setup || false } catch(e) { Fred.local_setup = false }
                 try { Fred.local_draw = draw || false } catch(e) { Fred.local_draw = false }
 		if (Fred.local_setup) Fred.local_setup()
+		if (Fred.local_draw) Fred.local_draw()
 		// Initiate main loop:
-		TimerManager.setup(Fred.draw,this,Fred.speed)
+		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
@@ -81,6 +82,16 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
+	},
+	pause: function() {
+		TimerManager.paused = true
+	},
+	resume: function() {
+		if (Fred.static) {
+			Fred.static = false
+			TimerManager.setup(Fred.draw,this,Fred.speed)
+		}
+		TimerManager.paused = false
 	},
 	select_layer: function(layer) {
 		Fred.active_layer = layer

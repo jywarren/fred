@@ -50,7 +50,7 @@ var TimerManager = {
 	 */
 	run: function() {
 		var start_date = new Date
-		this.f.apply(this.context)
+		if (!this.paused) this.f.apply(this.context)
 		var execution_time = new Date - start_date
 		this.times.unshift(parseInt(execution_time))
 		if (this.times.length > 100) this.times.pop()
