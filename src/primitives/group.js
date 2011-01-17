@@ -20,6 +20,7 @@ Fred.Group = Class.create({
 			this.r = 0 // no rotation
 			this.selected = true
 		}
+		return this
 	},
 	draw: function() {
 		save()

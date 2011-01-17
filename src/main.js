@@ -4,7 +4,7 @@
 Fred = {
 	click_radius: 6,
 	selection_color: '#a00',
-	speed: 30,
+	speed: 1000,
 	height: '100%',
 	width: '100%',
 	// whether to display the Fred logo
@@ -42,7 +42,8 @@ Fred = {
 		// Event handling setup:
 		Fred.observe('mousemove',Fred.on_mousemove)
 		Fred.observe('touchmove',Fred.on_touchmove)
-		// Fred.observe('mouseup',Fred.on_mouseup)
+		Fred.observe('mouseup',Fred.on_mouseup)
+		Fred.observe('mousedown',Fred.on_mousedown)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
 		// Set up the main Fred DOM element:
@@ -51,8 +52,6 @@ Fred = {
 		Fred.element.style.left = 0
 		Fred.resize()
 		Event.observe(window, 'resize', Fred.resize_handler);
-		// Initiate main loop:
-		TimerManager.setup(Fred.draw,this,Fred.speed)
 		// Access main program grid:
 		var whtrbtobj
 		// Initialize other modules which are waiting for Fred to be ready
@@ -61,6 +60,8 @@ Fred = {
                 try { Fred.local_setup = setup || false } catch(e) { Fred.local_setup = false }
                 try { Fred.local_draw = draw || false } catch(e) { Fred.local_draw = false }
 		if (Fred.local_setup) Fred.local_setup()
+		// Initiate main loop:
+		TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
@@ -78,6 +79,7 @@ Fred = {
 			rect(10,10,40,40)
 			drawText('georgia',15,'white',12,30,'fred')
 		}
+		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
 	},
 	select_layer: function(layer) {
@@ -92,6 +94,7 @@ Fred = {
 	add: function(obj) {
 		this.objects.push(obj)
 		this.attach_listeners(obj)
+		return obj
 	},
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
@@ -158,7 +161,6 @@ Fred = {
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)
-		Fred.draw()
 	},
 	on_touchstart: function(e) {
 		console.log('touch!!')

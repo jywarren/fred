@@ -39,7 +39,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 		} else if (this.clicked_bezier) {
 			// edit the bezier
 			this.editing_bezier = true
-		} else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
+		} else if (this.polygon.closed && Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
 			// edit the rotation point
 			this.editing_rotation = true
 		} else {

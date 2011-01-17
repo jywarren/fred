@@ -1,0 +1,38 @@
+<html>
+<head>
+	<script src="../lib/prototype-1.6.1.js" type="text/javascript"></script>
+	<script src="../lib/canvas.js" type="text/javascript"></script>
+	<script src="../lib/shortcut.js" type="text/javascript"></script>
+	<script src="../fred.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="../fred.css" type="text/css" media="screen" title="no title" charset="utf-8">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="viewport" content="width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
+</head>
+<body onload="Fred.init({debug:true,logo:true}); //learn how to customize the Fred environment at http://github.com/jywarren/fred">
+
+	<div id="fred"></div>
+
+	<script>
+
+	function setup() {
+		ball = Fred.add(new Fred.Polygon([[0,0],[20,0],[20,20],[0,20]]))
+		ball.closed = true
+		ball.complete = true
+		Fred.move(ball,Fred.width/2,0)
+		ball.speed = 1
+		Fred.select_tool('edit')
+	}
+
+	function draw() {
+		if (!Fred.drag) {
+			ball.speed += 1
+			if (Math.abs(ball.speed) > 1) Fred.move(ball,0,ball.speed,false)
+			if (ball.y >= Fred.height-20) ball.speed = Math.abs(ball.speed)*-1
+		}
+	}
+
+	</script>
+
+</body>
+</html>

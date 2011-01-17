@@ -1,13 +1,13 @@
 var TimerManager = {
 	last_date: new Date,
 	times: [],
-	spacing: 0.8,
+	spacing: 4,
 	interval: 10,
-	setup: function(f,c,s,i) {
+	setup: function(f,c,i) {
 		this.f = f || function(){}
 		this.context = c || this
 		this.interval = i || this.interval
-		setTimeout(this.bound_run,i || this.interval)
+		setTimeout(this.bound_run,this.interval)
 	},
 	bound_run: function() {
 		TimerManager.run.apply(TimerManager)
@@ -18,22 +18,22 @@ var TimerManager = {
 		var execution_time = new Date - start_date
 		this.times.unshift(parseInt(execution_time))
 		if (this.times.length > 100) this.times.pop()
-		setTimeout(this.bound_run,Math.max(50,parseInt(this.spacing*this.sample())))
+		setTimeout(this.bound_run,parseInt(this.spacing*this.sample()))
 	},
 	sequence: [1,2,3,5,8,13],//,21,34,55],
 	sample: function() {
-		var sample = 0
-		for (var i = 0;i < this.sequence.length;i++) {
+		var sample = 0,samplesize = Math.min(this.sequence.length,this.times.length)
+		for (var i = 0;i < samplesize;i++) {
 			sample += this.times[this.sequence[i]] || 0
 		}
-		return sample/9
+		return sample/samplesize
 	},
 }
 
 Fred = {
 	click_radius: 6,
 	selection_color: '#a00',
-	speed: 30,
+	speed: 1000,
 	height: '100%',
 	width: '100%',
 	logo: true,
@@ -65,6 +65,8 @@ Fred = {
 		Fred.select_layer(Fred.layers.first())
 		Fred.observe('mousemove',Fred.on_mousemove)
 		Fred.observe('touchmove',Fred.on_touchmove)
+		Fred.observe('mouseup',Fred.on_mouseup)
+		Fred.observe('mousedown',Fred.on_mousedown)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
 		Fred.element.style.position = 'absolute'
@@ -72,12 +74,12 @@ Fred = {
 		Fred.element.style.left = 0
 		Fred.resize()
 		Event.observe(window, 'resize', Fred.resize_handler);
-		TimerManager.setup(Fred.draw,this,Fred.speed)
 		var whtrbtobj
 		Fred.keys.initialize()
                 try { Fred.local_setup = setup || false } catch(e) { Fred.local_setup = false }
                 try { Fred.local_draw = draw || false } catch(e) { Fred.local_draw = false }
 		if (Fred.local_setup) Fred.local_setup()
+		TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
 	draw: function() {
 		Fred.fire('fred:predraw')
@@ -93,6 +95,7 @@ Fred = {
 			rect(10,10,40,40)
 			drawText('georgia',15,'white',12,30,'fred')
 		}
+		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
 	},
 	select_layer: function(layer) {
@@ -107,6 +110,7 @@ Fred = {
 	add: function(obj) {
 		this.objects.push(obj)
 		this.attach_listeners(obj)
+		return obj
 	},
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
@@ -170,7 +174,6 @@ Fred = {
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)
-		Fred.draw()
 	},
 	on_touchstart: function(e) {
 		console.log('touch!!')
@@ -434,18 +437,31 @@ Fred.Point = Class.create({
 		this.x = x
 		this.y = y
 		this.bezier = { prev: false, next: false }
+		return this
 	},
 })
 Fred.Polygon = Class.create({
+	/*
+	 * By default accepts an array of {x:0,y:0} style point objects, but
+	 * can also accept an array of [x,y] pairs.
+	 */
 	initialize: function(points) {
 		this.point_size = 12
 		if (points) this.points = points
 		else this.points = []
+		if (points && points[0] instanceof Array) {
+			this.points = []
+			points.each(function(point){
+				this.points.push(new Fred.Point(point[0],point[1]))
+			},this)
+		}
 		this.selected = false
 		this.closed = false
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
+		this.rotation_point = false
+		return this
 	},
 	name: 'untitled polygon',
 	style: {
@@ -626,6 +642,7 @@ Fred.Group = Class.create({
 			this.r = 0 // no rotation
 			this.selected = true
 		}
+		return this
 	},
 	draw: function() {
 		save()
@@ -673,6 +690,7 @@ Fred.Image = Class.create({
 			this.image = new Image
 			this.image.src = src
 		}
+		return this
 	},
 	draw: function() {
 		if (this.image.width) {
@@ -895,7 +913,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 			}
 		} else if (this.clicked_bezier) {
 			this.editing_bezier = true
-		} else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
+		} else if (this.polygon.closed && Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.polygon.rotation_point.x,this.polygon.rotation_point.y) < Fred.click_radius) {
 			this.editing_rotation = true
 		} else {
 			var on_final = (this.polygon.points.length > 1 && ((Math.abs(this.polygon.points[0].x - Fred.pointer_x) < Fred.click_radius) && (Math.abs(this.polygon.points[0].y - Fred.pointer_y) < Fred.click_radius)))

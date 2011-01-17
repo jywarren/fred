@@ -14,6 +14,7 @@ Fred.Image = Class.create({
 			this.image = new Image
 			this.image.src = src
 		}
+		return this
 	},
 	draw: function() {
 		// for convenience!

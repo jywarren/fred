@@ -4,5 +4,6 @@ Fred.Point = Class.create({
 		this.x = x
 		this.y = y
 		this.bezier = { prev: false, next: false }
+		return this
 	},
 })

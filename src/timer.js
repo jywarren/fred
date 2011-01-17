@@ -15,7 +15,7 @@ var TimerManager = {
 	/**
 	 * Factor by which to space out executions. 2 means double the measured interval.
 	 */
-	spacing: 0.8,
+	spacing: 4,
 	/**
 	 * Interval after which to execute the function TimerManager.f() next time it's run;
 	 * changed every frame based on measured lag.
@@ -31,12 +31,11 @@ var TimerManager = {
 	 * 						2 means double the measured interval.
 	 * @param {Number} i The interval at which to run the function
 	 */
-	setup: function(f,c,s,i) {
+	setup: function(f,c,i) {
 		this.f = f || function(){}
 		this.context = c || this
 		this.interval = i || this.interval
-		setTimeout(this.bound_run,i || this.interval)
-		// this.spacing = Math.max(1,2.5-Viewport.power())
+		setTimeout(this.bound_run,this.interval)
 	},
 	/**
 	 * Binds the scope of TimerManager.run() to TimerManager
@@ -55,7 +54,7 @@ var TimerManager = {
 		var execution_time = new Date - start_date
 		this.times.unshift(parseInt(execution_time))
 		if (this.times.length > 100) this.times.pop()
-		setTimeout(this.bound_run,Math.max(50,parseInt(this.spacing*this.sample())))
+		setTimeout(this.bound_run,parseInt(this.spacing*this.sample()))
 	},
 	/**
 	 * Sampling pattern to make a best-guess at 
@@ -67,10 +66,10 @@ var TimerManager = {
 	 * what the next interval should be.
 	 */
 	sample: function() {
-		var sample = 0
-		for (var i = 0;i < this.sequence.length;i++) {
+		var sample = 0,samplesize = Math.min(this.sequence.length,this.times.length)
+		for (var i = 0;i < samplesize;i++) {
 			sample += this.times[this.sequence[i]] || 0
 		}
-		return sample/9
+		return sample/samplesize
 	},
 }

@@ -1,14 +1,27 @@
 // Basic, universal Polygon class
 Fred.Polygon = Class.create({
+	/*
+	 * By default accepts an array of {x:0,y:0} style point objects, but
+	 * can also accept an array of [x,y] pairs.
+	 */
 	initialize: function(points) {
 		this.point_size = 12
 		if (points) this.points = points
 		else this.points = []
+		// also accept an array of [x,y] pairs
+		if (points && points[0] instanceof Array) {
+			this.points = []
+			points.each(function(point){
+				this.points.push(new Fred.Point(point[0],point[1]))
+			},this)
+		}
 		this.selected = false
 		this.closed = false
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
+		this.rotation_point = false
+		return this
 	},
 	name: 'untitled polygon',
 	style: {
