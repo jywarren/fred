@@ -1,5 +1,7 @@
 // Basic bezier and polygon drawing pen tool
 Fred.tools.pen = new Fred.Tool('draw polygons',{
+	name: 'pen',
+	icon: 'images/pen.gif',
 	polygon: false,
 	dragging_point: false,
 	creating_bezier: false,

@@ -1,5 +1,7 @@
 // Default editing tool -- selection, translation, rotation, etc.
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
+	name: 'edit',
+	icon: 'images/pen.gif',
 	selection_box: {
 		// clockwise:
 		points: [ {x: 0, y: 0}, {x: 0, y:0}, 
