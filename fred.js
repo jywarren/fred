@@ -283,6 +283,7 @@ Fred = {
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
 		Fred.attach_listeners(Fred.active_tool)
+		if (Fred.toolbar.active) Fred.toolbar.update()
 	},
 
 	move: function(obj,x,y,absolute) {
@@ -845,7 +846,7 @@ Fred.Tool = Class.create({
 
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	name: 'edit',
-	icon: 'images/pen.gif',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAP+Hj8y/AAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA2klEQVQoz32QMU7DQBBF30rbUCCkpHaPLdH4BJEoOQMSoqHhAFDkAjRIiNZHSBRqijQgKmhN7YIrEMne+SmM8dqJMqPdYv6bP7PrxOHw8FApUXmXDYXbdT1ryiLzQHLBS7qUgIAQhvHLNc8peAhfq/yICfpPQ5zwSPMOTsBCU2wgG8YPNw48QPgrdvbtHboliYqKTtMDgRBZd2NCDNiof4/DWBbWA030/h7bGbHfwYnzqk6OuRohT3wTyk3mYZPMuaeKFjWgpOAyBUT+eWanH2KY/tWJN7VffSi2LS+tHNedUoUAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzE6NDYtMDU6MDCQx+NFAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDA2LTAzLTEyVDIxOjU3OjE4LTA1OjAwvZAdJgAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	selection_box: {
 		points: [ {x: 0, y: 0}, {x: 0, y:0},
 			  {x: 0, y: 0}, {x: 0, y:0} ]
@@ -908,9 +909,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	draw: function() {
 		if (this.dragging_selection) {
 			save()
-				lineWidth(1)
+				lineWidth(0.7)
 				opacity(0.7)
-				strokeStyle('#999')
+				strokeStyle('#222')
 				strokeRect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
 				opacity(0.3)
 				rect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
@@ -920,6 +921,10 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_mouseup: function() {
 		if (this.dragging_object) this.dragging_object = false
 		if (this.dragging_selection) this.dragging_selection = false
+		if (this.getDataUrl == true) {
+			getDataUrl
+			this.getDataUrl == false
+		}
 	},
 	on_touchstart: function(event) {
 		this.on_mousedown(event)
@@ -946,7 +951,7 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 })
 Fred.tools.pen = new Fred.Tool('draw polygons',{
 	name: 'pen',
-	icon: 'images/pen.gif',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAACqjSMyAAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA4ElEQVQoz4XRMUoDURDG8f+8PFgiBJZIQDu3CiSNzRKwzRFS5ACSLiCewBNY5R5JI7KkyQHSSLLphCjiYhGeWIXdsD4LIUTfQ6eYYn4fw8CI5e/SvmFS3T6b41IFT9UL8W0YW6GD4o6PiSeQ2IgaCsiZfiqXY454wGAAVfzakNiYCq/sWBGSMRDlckbBCQ3eGAgol3NOWfDCpcBBYOTlfeDW9rwMYhmeResuj7Q8DBr0uk/APe80SdlwLYeH6+82J2JJSp2bHwwaUmacU2LYOAxi6doKbULC8VXP/Yv89+4vdZlO6RlYezwAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzU6MjMtMDU6MDANe2UfAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDEwLTAzLTA5VDA5OjM1OjIzLTA1OjAwUsoTKwAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	polygon: false,
 	dragging_point: false,
 	creating_bezier: false,
@@ -1081,13 +1086,19 @@ Fred.toolbar = {
 		if (!$('fred_toolbar')) {
 			$$('body')[0].insert({top:'<div id="fred_toolbar"></div>'})
 			this.element = $('fred_toolbar')
-			$$('body')[0].insert("<style>#fred_toolbar {height: "+this.height+"px;width: 100%;background:#222;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#444),to(#222))}#fred_toolbar a.button {display:block;float:left;height:40px;width:40px;margin:6px;}</style>")
+			$$('body')[0].insert("<style>#fred_toolbar {height: "+this.height+"px;width: 100%;background:#222;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#444),to(#222))}#fred_toolbar a.button {display:block;float:left;height:16px;width:16px;margin:6px;margin-right:0;padding:9px;border:1px solid #000;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#666),to(#333));-moz-border-radius-topleft:3px;-webkit-border-top-left-radius:3px;-moz-border-radius-bottomleft:3px;-webkit-border-bottom-left-radius:3px;-moz-border-radius-topright:3px;-webkit-border-top-right-radius:3px;-moz-border-radius-bottomright:3px;-webkit-border-bottom-right-radius:3px;} #fred_toolbar a.button:hover {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#555),to(#222));} #fred_toolbar a.button.active {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#333),to(#444));} </style>")
 			this.members.each(function(member){
-				this.element.insert('<a class="button" href="javascript:void();" onClick="Fred.select_tool(\''+member.name+'\')"><img src="'+member.icon+'" /></a>')
+				this.element.insert('<a id="fred_toolbar_'+member.name+'" class="button" href="javascript:void();" onClick="Fred.select_tool(\''+member.name+'\')"><img src="'+member.icon+'" /></a>')
 			},this)
 			this.initialized = true
 
 		}
+	},
+	update: function() {
+		this.members.each(function(member) {
+			$('fred_toolbar_'+member.name).removeClassName('active')
+			if (Fred.active_tool.name == member.name) $('fred_toolbar_'+member.name).addClassName('active')
+		},this)
 	},
 
 	show: function() {
@@ -1095,6 +1106,7 @@ Fred.toolbar = {
 		Fred.height_offset += this.height
 		if (!this.initialized) this.init()
 		Fred.resize()
+		this.update()
 		this.element.show()
 	},
 	hide: function() {

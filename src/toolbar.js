@@ -8,13 +8,19 @@ Fred.toolbar = {
 		if (!$('fred_toolbar')) {
 			$$('body')[0].insert({top:'<div id="fred_toolbar"></div>'})
 			this.element = $('fred_toolbar')
-			$$('body')[0].insert("<style>#fred_toolbar {height: "+this.height+"px;width: 100%;background:#222;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#444),to(#222))}#fred_toolbar a.button {display:block;float:left;height:40px;width:40px;margin:6px;}</style>")
+			$$('body')[0].insert("<style>#fred_toolbar {height: "+this.height+"px;width: 100%;background:#222;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#444),to(#222))}#fred_toolbar a.button {display:block;float:left;height:16px;width:16px;margin:6px;margin-right:0;padding:9px;border:1px solid #000;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#666),to(#333));-moz-border-radius-topleft:3px;-webkit-border-top-left-radius:3px;-moz-border-radius-bottomleft:3px;-webkit-border-bottom-left-radius:3px;-moz-border-radius-topright:3px;-webkit-border-top-right-radius:3px;-moz-border-radius-bottomright:3px;-webkit-border-bottom-right-radius:3px;} #fred_toolbar a.button:hover {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#555),to(#222));} #fred_toolbar a.button.active {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#333),to(#444));} </style>")
 			this.members.each(function(member){
-				this.element.insert('<a class="button" href="javascript:void();" onClick="Fred.select_tool(\''+member.name+'\')"><img src="'+member.icon+'" /></a>')
+				this.element.insert('<a id="fred_toolbar_'+member.name+'" class="button" href="javascript:void();" onClick="Fred.select_tool(\''+member.name+'\')"><img src="'+member.icon+'" /></a>')
 			},this)
 			this.initialized = true
 
 		}
+	},
+	update: function() {
+		this.members.each(function(member) {
+			$('fred_toolbar_'+member.name).removeClassName('active')
+			if (Fred.active_tool.name == member.name) $('fred_toolbar_'+member.name).addClassName('active')
+		},this)
 	},
 
 	show: function() {
@@ -22,6 +28,7 @@ Fred.toolbar = {
 		Fred.height_offset += this.height
 		if (!this.initialized) this.init()
 		Fred.resize()
+		this.update()
 		this.element.show()
 	},
 	hide: function() {

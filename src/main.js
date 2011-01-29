@@ -272,6 +272,7 @@ Fred = {
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
 		Fred.attach_listeners(Fred.active_tool)
+		if (Fred.toolbar.active) Fred.toolbar.update()
 	},
 
 	/**

@@ -1,7 +1,7 @@
 // Default editing tool -- selection, translation, rotation, etc.
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	name: 'edit',
-	icon: 'images/pen.gif',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAP+Hj8y/AAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA2klEQVQoz32QMU7DQBBF30rbUCCkpHaPLdH4BJEoOQMSoqHhAFDkAjRIiNZHSBRqijQgKmhN7YIrEMne+SmM8dqJMqPdYv6bP7PrxOHw8FApUXmXDYXbdT1ryiLzQHLBS7qUgIAQhvHLNc8peAhfq/yICfpPQ5zwSPMOTsBCU2wgG8YPNw48QPgrdvbtHboliYqKTtMDgRBZd2NCDNiof4/DWBbWA030/h7bGbHfwYnzqk6OuRohT3wTyk3mYZPMuaeKFjWgpOAyBUT+eWanH2KY/tWJN7VffSi2LS+tHNedUoUAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzE6NDYtMDU6MDCQx+NFAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDA2LTAzLTEyVDIxOjU3OjE4LTA1OjAwvZAdJgAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	selection_box: {
 		// clockwise:
 		points: [ {x: 0, y: 0}, {x: 0, y:0}, 
@@ -71,9 +71,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	draw: function() {
 		if (this.dragging_selection) {
 			save()
-				lineWidth(1)
+				lineWidth(0.7)
 				opacity(0.7)
-				strokeStyle('#999')
+				strokeStyle('#222')
 				strokeRect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
 				opacity(0.3)
 				rect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
@@ -83,6 +83,10 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_mouseup: function() {
 		if (this.dragging_object) this.dragging_object = false
 		if (this.dragging_selection) this.dragging_selection = false
+		if (this.getDataUrl == true) {
+			getDataUrl
+			this.getDataUrl == false
+		}
 	},
 	on_touchstart: function(event) {
 		this.on_mousedown(event)
