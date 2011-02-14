@@ -17,6 +17,7 @@ Fred.keys = {
 	master: $H({
 		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
+		'c': function(){ Fred.select_tool('color') },
 	}),
 	current: $H({
 		

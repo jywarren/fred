@@ -9,6 +9,7 @@ Fred.Image = Class.create({
 		this.r = r || 0 // rotation
 		this.scale = scale || 0.25
 		this.src = src
+		this.selected = true 
 		if (src && typeof src == 'string') {
 			this.src = src
 			this.image = new Image
@@ -31,28 +32,30 @@ Fred.Image = Class.create({
 			rotate(-this.r)
 			translate(-this.x,-this.y)
 		restore()
-		save()
+		if (this.selected) {
+			save()
 			translate(this.x,this.y)
 			rotate(this.r)
-			// Draw corner control points
-			var w = this.width*this.scale
-			var h = this.height*this.scale
-			this.corners = [[-w/2,-h/2],
-					[w/2,-h/2],
-					[w/2,h/2],	
-					[-w/2,h/2]]
-			this.corners.each(function(corner) {
-				strokeStyle('white')
-				lineWidth(2)
-				opacity(0.2)
-				// if the mouse is in the circle
-				if (true) circle(corner[0],corner[1],Fred.click_radius)
-				opacity(0.9)
-				strokeCircle(corner[0],corner[1],Fred.click_radius)
-			},this)
-			translate(-this.x,-this.y)
-			rotate(-this.r)
-		restore()
+				// Draw corner control points
+				var w = this.width*this.scale
+				var h = this.height*this.scale
+				this.corners = [[-w/2,-h/2],
+						[w/2,-h/2],
+						[w/2,h/2],	
+						[-w/2,h/2]]
+				this.corners.each(function(corner) {
+					strokeStyle('white')
+					lineWidth(2)
+					opacity(0.2)
+					// if the mouse is in the circle
+					if (true) circle(corner[0],corner[1],Fred.click_radius)
+					opacity(0.9)
+					strokeCircle(corner[0],corner[1],Fred.click_radius)
+				},this)
+				translate(-this.x,-this.y)
+				rotate(-this.r)
+			restore()
+		}
 	},
 	on_mousedown: function(){
 		var poly = [	{x:this.x-this.width/2,y:this.y-this.height-2},

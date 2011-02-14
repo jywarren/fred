@@ -180,6 +180,8 @@ Fred = {
 		Fred.drag = false
 	},
 	on_mousedown: function(e) {
+		Fred.pointer_x = Event.pointerX(e)
+		Fred.pointer_y = Event.pointerY(e)
 		Fred.drag = true
 	},
 	on_mousemove: function(e) {
@@ -187,6 +189,8 @@ Fred = {
 		Fred.pointer_y = Event.pointerY(e)
 	},
 	on_touchstart: function(e) {
+		Fred.pointer_x = e.touches[0].pageX
+		Fred.pointer_y = e.touches[0].pageY
 		console.log('touch!!')
 		e.preventDefault()
 		Fred.drag = true
@@ -239,7 +243,6 @@ Fred = {
 		})
 	},
 	select_tool: function(tool) {
-		console.log('selecting '+tool)
 		if (Fred.active_tool) Fred.active_tool.deselect()
 		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
@@ -283,11 +286,29 @@ Fred = {
 	error: function(e) {
 		console.log(e)
 	},
+
 	/*
-	 *
+	 * Navigate to a new URL
 	 */
 	go: function(url) {
 		window.location = url
+	},
+	/*
+	 * Returns a triplet of values for red, green,
+	 * and blue for the given x,y position. Accepts
+	 * a 'size' parameter, returning an average color
+	 * for an area of that height and width.
+	 */
+	get_color: function(x,y,size) {
+		size = size || 1
+		var raw = Fred.canvas.getImageData(x-parseInt((size+0.0001)/2),y-parseInt((size+0.0001)/2),size,size)
+		return [raw.data[0],raw.data[1],raw.data[2],raw.data[3]]
+	},
+	/*
+	 * Writes a pixel of the specified color to the given location.
+	 */
+	put_color: function(x,y,color) {
+		Fred.canvas.putImageData(x,y,color)
 	},
 }
 
@@ -338,6 +359,12 @@ Fred.selection = {
 			obj.selected = true
 		}
 		this.recalc_xy()
+	},
+	/*
+	 * Responds as an array
+	 */
+	each: function(args) {
+		this.members.each(args)
 	},
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
@@ -430,7 +457,6 @@ Fred.selection = {
 			this.members.each(function(obj){
 				if (Fred.is_object(obj)) {
 					if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
-						console.log('inside')
 						inside = true
 					} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
 				}
@@ -473,17 +499,18 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
+		this.style = {
+			fill: '#ccc',
+			stroke: '#222',
+			lineWidth: 2,
+			textsize: 15,
+			textfill: '#222',
+			font: 'georgia',
+			pattern: false,
+		}
 		return this
 	},
 	name: 'untitled polygon',
-	style: {
-		fill: '#ccc',
-		stroke: '#222',
-		lineWidth: 2,
-		textsize: 15,
-		textfill: '#222',
-		font: 'georgia',
-	},
 	apply_style: function() {
 		lineWidth(this.style.lineWidth)
 		strokeStyle(this.style.stroke)
@@ -571,7 +598,16 @@ Fred.Polygon = Class.create(Fred.Object,{
 			if (this.closed) {
 				lineTo(this.points[0].x,this.points[0].y)
 				fillStyle(this.style.fill)
-				fill()
+				if (this.pattern && this.pattern.width) {
+					fillPattern(this.pattern)
+				} else if (this.style.pattern) {
+					this.pattern = new Image()
+					this.pattern.src = this.style.pattern
+				}
+				save()
+					translate(this.x,this.y)
+					fill()
+				restore()
 			}
 			stroke()
 			if (this.text) {
@@ -585,10 +621,11 @@ Fred.Polygon = Class.create(Fred.Object,{
 				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < this.point_size) {
 					opacity(0.4)
 					over_point = true
-					fillStyle('#a22')
+					fillStyle('#f55')
 					rect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
 				} else if (this.selected) {
-					strokeStyle('#a22')
+					lineWidth(2)
+					strokeStyle('#f55')
 					strokeRect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
 				}
 				restore()
@@ -705,6 +742,7 @@ Fred.Image = Class.create({
 		this.r = r || 0 // rotation
 		this.scale = scale || 0.25
 		this.src = src
+		this.selected = true
 		if (src && typeof src == 'string') {
 			this.src = src
 			this.image = new Image
@@ -726,26 +764,28 @@ Fred.Image = Class.create({
 			rotate(-this.r)
 			translate(-this.x,-this.y)
 		restore()
-		save()
+		if (this.selected) {
+			save()
 			translate(this.x,this.y)
 			rotate(this.r)
-			var w = this.width*this.scale
-			var h = this.height*this.scale
-			this.corners = [[-w/2,-h/2],
-					[w/2,-h/2],
-					[w/2,h/2],
-					[-w/2,h/2]]
-			this.corners.each(function(corner) {
-				strokeStyle('white')
-				lineWidth(2)
-				opacity(0.2)
-				if (true) circle(corner[0],corner[1],Fred.click_radius)
-				opacity(0.9)
-				strokeCircle(corner[0],corner[1],Fred.click_radius)
-			},this)
-			translate(-this.x,-this.y)
-			rotate(-this.r)
-		restore()
+				var w = this.width*this.scale
+				var h = this.height*this.scale
+				this.corners = [[-w/2,-h/2],
+						[w/2,-h/2],
+						[w/2,h/2],
+						[-w/2,h/2]]
+				this.corners.each(function(corner) {
+					strokeStyle('white')
+					lineWidth(2)
+					opacity(0.2)
+					if (true) circle(corner[0],corner[1],Fred.click_radius)
+					opacity(0.9)
+					strokeCircle(corner[0],corner[1],Fred.click_radius)
+				},this)
+				translate(-this.x,-this.y)
+				rotate(-this.r)
+			restore()
+		}
 	},
 	on_mousedown: function(){
 		var poly = [	{x:this.x-this.width/2,y:this.y-this.height-2},
@@ -1025,6 +1065,33 @@ Fred.tools.place = new Fred.Tool('select & manipulate objects',{
 		this.image(uri)
 	}
 })
+Fred.tools.color = new Fred.Tool('assign color to objects',{
+	select: function() {
+		this.pane = this.pane || new Fred.Polygon([[0,0],[195,0],[195,40],[0,40]],{complete:true,closed:true})
+		Fred.add(this.pane)
+		this.pane.style.pattern = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMMAAAABCAYAAABjXxoVAAAAZElEQVQokaWSSw6AIBBD30gEEu9/V/ziQjaOSMRZNCSv3bSD5IlMBCIQyqtl4bVMYUeA1UHi0lyUKurlLW+5ZeRjoTfvz0DK2xwk6Sukc71DKOazrY23LcDIzqAuY/8JrcGe/ASqeGcEFhVFaAAAAABJRU5ErkJggg=="
+		Fred.move(this.pane,Fred.width/2-195,Fred.height/2)
+		this.pane.show_highlights = false
+		this.pane.style.lineWidth = 5
+	},
+	deselect: function() {
+		Fred.remove(this.pane)
+		this.pane = false
+	},
+	draw: function() {
+
+	},
+	on_mousedown: function() {
+		if (Fred.Geometry.is_point_in_poly(this.pane.points,Fred.pointer_x,Fred.pointer_y)) {
+			var color = Fred.get_color(Fred.pointer_x,Fred.pointer_y)
+			Fred.selection.each(function(selection){
+				selection.style.fill = "rgba("+color[0]+","+color[1]+","+color[2]+","+color[3]+")"
+			},this)
+		} else {
+			Fred.tools.edit.on_mousedown()
+		}
+	},
+})
 
 Fred.Geometry = {
 	point_from_polar: function(x,y,t,d) {
@@ -1080,6 +1147,22 @@ Fred.Geometry = {
 	does_poly_overlap_poly: function(poly_a,poly_b) {
 	}
 }
+Fred.Dialog = Class.create({
+	/* example: new Fred.Dialog({	title:'Object script:',
+	 *				content:'<textarea>'++'</textarea>'})
+	 * 				buttons: [
+	 *						{title:'Save',}
+	 *					]
+	 */
+	initialize: function(args) {
+		this.title = args.title || ''
+		this.content = args.content || ''
+		this.buttons = args.buttons || []
+		this.buttons.each(function(button){
+
+		})
+	},
+})
 
 Fred.keys = {
 	shift: false,
@@ -1092,6 +1175,7 @@ Fred.keys = {
 	master: $H({
 		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
+		'c': function(){ Fred.select_tool('color') },
 	}),
 	current: $H({
 

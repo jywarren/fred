@@ -167,6 +167,8 @@ Fred = {
 		Fred.drag = false
 	},
 	on_mousedown: function(e) {
+		Fred.pointer_x = Event.pointerX(e)
+		Fred.pointer_y = Event.pointerY(e)
 		Fred.drag = true
 	},
 	on_mousemove: function(e) {
@@ -174,6 +176,8 @@ Fred = {
 		Fred.pointer_y = Event.pointerY(e)
 	},
 	on_touchstart: function(e) {
+		Fred.pointer_x = e.touches[0].pageX
+		Fred.pointer_y = e.touches[0].pageY
 		console.log('touch!!')
 		e.preventDefault()
 		Fred.drag = true
@@ -227,7 +231,6 @@ Fred = {
 		})
 	},
 	select_tool: function(tool) {
-		console.log('selecting '+tool)
 		if (Fred.active_tool) Fred.active_tool.deselect()
 		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
@@ -291,11 +294,32 @@ Fred = {
 	error: function(e) {
 		console.log(e)
 	},
+	///////////////////////
+	// Miscellaneous functions which may someday find a home:
+	///////////////////////
+
 	/*
-	 * 
+	 * Navigate to a new URL
 	 */
 	go: function(url) {
 		window.location = url
+	},
+	/*
+	 * Returns a triplet of values for red, green, 
+	 * and blue for the given x,y position. Accepts 
+	 * a 'size' parameter, returning an average color
+	 * for an area of that height and width.
+	 */
+	get_color: function(x,y,size) {
+		size = size || 1
+		var raw = Fred.canvas.getImageData(x-parseInt((size+0.0001)/2),y-parseInt((size+0.0001)/2),size,size)
+		return [raw.data[0],raw.data[1],raw.data[2],raw.data[3]]
+	},
+	/*
+	 * Writes a pixel of the specified color to the given location.
+	 */
+	put_color: function(x,y,color) {
+		Fred.canvas.putImageData(x,y,color)
 	},
 }
 
@@ -320,8 +344,10 @@ console.info = console.info || function(){};
 //= require <tools/edit>
 //= require <tools/pen>
 //= require <tools/place>
+//= require <tools/color>
 
 //= require <geometry>
+//= require <dialog>
 //= require <keys>
 
 

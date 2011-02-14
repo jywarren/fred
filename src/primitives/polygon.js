@@ -23,17 +23,18 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
+		this.style = {
+			fill: '#ccc',
+			stroke: '#222',
+			lineWidth: 2,
+			textsize: 15,
+			textfill: '#222',
+			font: 'georgia',
+			pattern: false,
+		}
 		return this
 	},
 	name: 'untitled polygon',
-	style: {
-		fill: '#ccc',
-		stroke: '#222',
-		lineWidth: 2,
-		textsize: 15,
-		textfill: '#222',
-		font: 'georgia',
-	},
 	apply_style: function() {
 		lineWidth(this.style.lineWidth)
 		strokeStyle(this.style.stroke)
@@ -134,7 +135,16 @@ Fred.Polygon = Class.create(Fred.Object,{
 			if (this.closed) {
 				lineTo(this.points[0].x,this.points[0].y)
 				fillStyle(this.style.fill)
-				fill()
+				if (this.pattern && this.pattern.width) {
+					fillPattern(this.pattern)
+				} else if (this.style.pattern) {
+					this.pattern = new Image()
+					this.pattern.src = this.style.pattern
+				}
+				save()
+					translate(this.x,this.y)
+					fill()
+				restore()
 			}
 			stroke()
 			// draw text here
@@ -149,10 +159,11 @@ Fred.Polygon = Class.create(Fred.Object,{
 				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < this.point_size) {
 					opacity(0.4)
 					over_point = true
-					fillStyle('#a22')
+					fillStyle('#f55')
 					rect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
 				} else if (this.selected) {
-					strokeStyle('#a22')
+					lineWidth(2)
+					strokeStyle('#f55')
 					strokeRect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
 				}
 				restore()

@@ -20,6 +20,12 @@ Fred.selection = {
 		this.recalc_xy()
 	},
 	/*
+	 * Responds as an array
+	 */
+	each: function(args) {
+		this.members.each(args)
+	},
+	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
 	 */
 	remove: function(obj) {
@@ -128,7 +134,6 @@ Fred.selection = {
 				if (Fred.is_object(obj)) {
 					// later replace this with a general is_point_in_obj()
 					if (Fred.Geometry.is_point_in_poly(obj.points,x,y)) {
-						console.log('inside')
 						inside = true
 					} // else if (Fred.Geometry.is_point_on_polyline(obj.points,x,y)) {
 					//}

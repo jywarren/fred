@@ -16,11 +16,12 @@
 	<script>
 
 	function setup() {
-		ball = Fred.add(new Fred.Polygon([[0,0],[20,0],[20,20],[0,20]],{complete:true,closed:true}))
+		ball = Fred.add(new Fred.Polygon([[0,0],[20,0],[20,20],[0,30]],{complete:true,closed:true}))
 		ball.closed = true
 		ball.complete = true
-		Fred.move(ball,Fred.width/2,0)
+		Fred.move(ball,Fred.width/2+100,0)
 		ball.speed = 1
+		ball.style.fill = 'green'
 		Fred.select_tool('edit')
 	}
 

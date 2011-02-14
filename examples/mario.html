@@ -26,6 +26,8 @@
 		mario.yspeed = 0
 		mario.xspeed = 0
 
+		Fred.add(new Fred.Polygon([[100,200],[200,200],[200,230],[100,230]]))
+
 		// any Fred object can be extended directly:
 		mario.jump = function() {
 			if (!mario.jumping) {
@@ -42,6 +44,7 @@
 	}
 
 	function draw() {
+
 		mario.on_ground = (Fred.canvas.getImageData(mario.x,mario.y+30,1,1).data[0] > 20)
 		
 		if (mario.xspeed > 0) mario.xspeed -= 1
@@ -56,10 +59,14 @@
 
 		if (mario.on_ground || mario.y >= Fred.height-40) {
 			if (mario.yspeed > 0) {
+				if (mario.yspeed > 15) {
+					alert('has muerto')
+				}
 				mario.jumping = false
 				mario.yspeed = 0
 			}
 		}
+
 
 	}
 
