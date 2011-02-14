@@ -44,6 +44,7 @@ Fred = {
 	date: new Date,
 	pointer_x: 0,
 	pointer_y: 0,
+	height_offset: 0,
 	style: {},
 	times: [],
 	drag: false,
@@ -56,9 +57,11 @@ Fred = {
 			'touchend',
 			'gesturestart',
 			'gestureend'],
+
 	init: function(args) {
 		Object.extend(Fred,args)
 		Fred.element = $('fred')
+		$$('body')[0].insert("<style>#fred canvas {display:block;clear:both;}body {margin:0;}</style>")
 		Fred.select_tool('pen')
 		new Fred.Layer('main',{active:true})
 		new Fred.Layer('background')
@@ -69,9 +72,16 @@ Fred = {
 		Fred.observe('mousedown',Fred.on_mousedown)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
-		Fred.element.style.position = 'absolute'
-		Fred.element.style.top = 0
-		Fred.element.style.left = 0
+		Fred.currentWidth = 0
+		var updateLayout = function() {
+		if (window.innerWidth != Fred.currentWidth) {
+		    Fred.currentWidth = window.innerWidth;
+		    var orient = (Fred.currentWidth == 320) ? "profile" : "landscape";
+		    document.body.setAttribute("orient", orient);
+		    window.scrollTo(0, 1);
+		}
+		};
+		setInterval(updateLayout, 400);
 		Fred.resize()
 		Event.observe(window, 'resize', Fred.resize_handler);
 		var whtrbtobj
@@ -82,6 +92,7 @@ Fred = {
 		if (Fred.local_draw) Fred.local_draw()
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
+
 	draw: function() {
 		Fred.fire('fred:predraw')
 		Fred.timestamp = Fred.date.getTime()
@@ -93,15 +104,27 @@ Fred = {
 		Fred.fire('fred:postdraw')
 		if (Fred.logo) {
 			fillStyle('#a00')
-			rect(10,10,40,40)
-			drawText('georgia',15,'white',12,30,'fred')
+			beginPath()
+				moveTo(0,0)
+				lineTo(50,0)
+				lineTo(0,50)
+				lineTo(0,0)
+			fill()
+			save()
+			translate(15,15)
+			rotate(-45)
+			translate(-15,-15)
+				drawText('georgia',12,'white',0,25,'fred')
+			restore()
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
 	},
+
 	pause: function() {
 		TimerManager.paused = true
 	},
+
 	resume: function() {
 		if (Fred.static) {
 			Fred.static = false
@@ -109,12 +132,14 @@ Fred = {
 		}
 		TimerManager.paused = false
 	},
+
 	select_layer: function(layer) {
 		Fred.active_layer = layer
 		$C = Fred.active_layer.canvas
 		Fred.objects = Fred.active_layer.objects
 		Fred.canvas = Fred.active_layer.canvas
 	},
+
 	/*
 	 * Add an object to Fred's active layer and autodetect its event listeners
 	 */
@@ -123,6 +148,7 @@ Fred = {
 		this.attach_listeners(obj)
 		return obj
 	},
+
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
 	 */
@@ -135,24 +161,27 @@ Fred = {
 		this.detach_listeners(obj)
 		return obj
 	},
+
 	resize_handler: function(e,width,height) {
 		Fred.resize(width,height)
 	},
+
 	resize: function(width,height) {
 		width = width || document.viewport.getWidth()
 		height = height || document.viewport.getHeight()
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))
 		else Fred.width = width
-		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))
-		else Fred.height = height
-		Fred.element.style.width = width+'px'
-		Fred.element.style.height = height+'px'
+		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))-Fred.height_offset
+		else Fred.height = height-Fred.height_offset
+		Fred.element.width = Fred.width
+		Fred.element.height = Fred.height
 		Fred.layers.each(function(layer){
 			layer.element.width = Fred.width
 			layer.element.height = Fred.height
 		})
 		Fred.draw()
 	},
+
 	/*
 	 * Returns true if an object is a known object class;
 	 * this should eventually simply check if the object
@@ -168,25 +197,34 @@ Fred = {
 		},this)
 		return passes
 	},
+
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,
 		fontColor: '#222',
 	},
+
 	text: function(text,x,y) {
 		drawText(Fred.text_style.fontFamily,Fred.text_style.fontSize,Fred.text_style.fontColor,x,y,text)
 	},
+
 	on_mouseup: function(e) {
 		Fred.drag = false
 	},
 	on_mousedown: function(e) {
+<<<<<<< HEAD
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)
+=======
+		if (Fred.pointer_x+Fred.pointer_y < 50) {
+			Fred.toolbar.toggle()
+		}
+>>>>>>> ef9dc9b1bf30f0b3ac30d8c0f6df461fa2746a02
 		Fred.drag = true
 	},
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
-		Fred.pointer_y = Event.pointerY(e)
+		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 	},
 	on_touchstart: function(e) {
 		Fred.pointer_x = e.touches[0].pageX
@@ -204,6 +242,7 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = false
 	},
+
 	/*
 	 * Deactivate old listeners. Can be run on any object with
 	 * a stored Hash of listeners, e.g. object.listeners.get(key)
@@ -218,6 +257,7 @@ Fred = {
 			if (method == 'draw') Fred.stop_observing('fred:postdraw',obj.listeners.get('draw'))
 		},this)
 	},
+
 	/*
 	 * Autodetect and activate listeners for any object. Object will receive
 	 * a stored Hash of listeners, e.g. object.listeners.get(key).
@@ -242,13 +282,16 @@ Fred = {
 			}
 		})
 	},
+
 	select_tool: function(tool) {
 		if (Fred.active_tool) Fred.active_tool.deselect()
 		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
 		Fred.attach_listeners(Fred.active_tool)
+		if (Fred.toolbar.active) Fred.toolbar.update()
 	},
+
 	move: function(obj,x,y,absolute) {
 		if (obj.move) {
 			obj.move(x,y,absolute)
@@ -271,6 +314,7 @@ Fred = {
 			}
 		}
 	},
+
 	observe: function(a,b,c) {
 		if (a == 'keypress' || a == 'keyup') document.observe(a,b,c)
 		else Fred.element.observe(a,b,c)
@@ -321,7 +365,7 @@ console.info = console.info || function(){};
 Fred.Layer = Class.create({
 	initialize: function(name,args) {
 		Fred.layers.push(this)
-		Fred.element.insert("<canvas style='position:absolute;top:0;left:0;' id='"+name+"'></canvas>")
+		Fred.element.insert("<canvas style='position:absolute;' id='"+name+"'></canvas>")
 		this.name = name
 		this.static = ''
 		this.active = false
@@ -843,6 +887,8 @@ Fred.Tool = Class.create({
 })
 
 Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
+	name: 'edit',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAP+Hj8y/AAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA2klEQVQoz32QMU7DQBBF30rbUCCkpHaPLdH4BJEoOQMSoqHhAFDkAjRIiNZHSBRqijQgKmhN7YIrEMne+SmM8dqJMqPdYv6bP7PrxOHw8FApUXmXDYXbdT1ryiLzQHLBS7qUgIAQhvHLNc8peAhfq/yICfpPQ5zwSPMOTsBCU2wgG8YPNw48QPgrdvbtHboliYqKTtMDgRBZd2NCDNiof4/DWBbWA030/h7bGbHfwYnzqk6OuRohT3wTyk3mYZPMuaeKFjWgpOAyBUT+eWanH2KY/tWJN7VffSi2LS+tHNedUoUAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzE6NDYtMDU6MDCQx+NFAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDA2LTAzLTEyVDIxOjU3OjE4LTA1OjAwvZAdJgAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	selection_box: {
 		points: [ {x: 0, y: 0}, {x: 0, y:0},
 			  {x: 0, y: 0}, {x: 0, y:0} ]
@@ -905,9 +951,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	draw: function() {
 		if (this.dragging_selection) {
 			save()
-				lineWidth(1)
+				lineWidth(0.7)
 				opacity(0.7)
-				strokeStyle('#999')
+				strokeStyle('#222')
 				strokeRect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
 				opacity(0.3)
 				rect(this.selection_box.points[0].x,this.selection_box.points[0].y,this.selection_box.width,this.selection_box.height)
@@ -917,6 +963,10 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_mouseup: function() {
 		if (this.dragging_object) this.dragging_object = false
 		if (this.dragging_selection) this.dragging_selection = false
+		if (this.getDataUrl == true) {
+			getDataUrl
+			this.getDataUrl == false
+		}
 	},
 	on_touchstart: function(event) {
 		this.on_mousedown(event)
@@ -942,6 +992,8 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	}
 })
 Fred.tools.pen = new Fred.Tool('draw polygons',{
+	name: 'pen',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAACqjSMyAAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA4ElEQVQoz4XRMUoDURDG8f+8PFgiBJZIQDu3CiSNzRKwzRFS5ACSLiCewBNY5R5JI7KkyQHSSLLphCjiYhGeWIXdsD4LIUTfQ6eYYn4fw8CI5e/SvmFS3T6b41IFT9UL8W0YW6GD4o6PiSeQ2IgaCsiZfiqXY454wGAAVfzakNiYCq/sWBGSMRDlckbBCQ3eGAgol3NOWfDCpcBBYOTlfeDW9rwMYhmeResuj7Q8DBr0uk/APe80SdlwLYeH6+82J2JJSp2bHwwaUmacU2LYOAxi6doKbULC8VXP/Yv89+4vdZlO6RlYezwAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzU6MjMtMDU6MDANe2UfAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDEwLTAzLTA5VDA5OjM1OjIzLTA1OjAwUsoTKwAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	polygon: false,
 	dragging_point: false,
 	creating_bezier: false,
@@ -1093,6 +1145,77 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 	},
 })
 
+Fred.toolbar = {
+	position: 'top',
+	height: 50,
+	element: false,
+	initialized: false,
+
+	init: function() {
+		if (!$('fred_toolbar')) {
+			$$('body')[0].insert({top:'<div id="fred_toolbar"></div>'})
+			this.element = $('fred_toolbar')
+			$$('body')[0].insert("<style>#fred_toolbar {height: "+this.height+"px;width: 100%;background:#222;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#444),to(#222))}#fred_toolbar a.button {display:block;float:left;height:16px;width:16px;margin:6px;margin-right:0;padding:9px;border:1px solid #000;background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#666),to(#333));-moz-border-radius-topleft:3px;-webkit-border-top-left-radius:3px;-moz-border-radius-bottomleft:3px;-webkit-border-bottom-left-radius:3px;-moz-border-radius-topright:3px;-webkit-border-top-right-radius:3px;-moz-border-radius-bottomright:3px;-webkit-border-bottom-right-radius:3px;} #fred_toolbar a.button:hover {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#555),to(#222));} #fred_toolbar a.button.active {background:-webkit-gradient(linear, 0% 0%,0% 100%,from(#333),to(#444));} </style>")
+			this.members.each(function(member){
+				this.element.insert('<a id="fred_toolbar_'+member.name+'" class="button" href="javascript:void();" onClick="Fred.select_tool(\''+member.name+'\')"><img src="'+member.icon+'" /></a>')
+			},this)
+			this.initialized = true
+
+		}
+	},
+	update: function() {
+		this.members.each(function(member) {
+			$('fred_toolbar_'+member.name).removeClassName('active')
+			if (Fred.active_tool.name == member.name) $('fred_toolbar_'+member.name).addClassName('active')
+		},this)
+	},
+
+	show: function() {
+		this.active = true
+		Fred.height_offset += this.height
+		if (!this.initialized) this.init()
+		Fred.resize()
+		this.update()
+		this.element.show()
+	},
+	hide: function() {
+		this.active = false
+		Fred.height_offset -= this.height
+		Fred.resize()
+		this.element.hide()
+	},
+	toggle: function() {
+		if (this.active) this.hide()
+		else this.show()
+	},
+	/*
+	 * slide open and closed with animation
+	 */
+	open: function() {
+
+	},
+	close: function() {
+
+	},
+
+	members: [
+		Fred.tools.pen,
+		Fred.tools.edit,
+	],
+	on_mousedown: function() {
+		if (Fred.pointer_x < this.height) {
+			this.dragging = true
+		}
+	},
+	on_mousemove: function() {
+		if (this.dragging) {
+
+		}
+	},
+	on_mouseup: function() {
+		this.dragging = false
+	}
+}
 Fred.Geometry = {
 	point_from_polar: function(x,y,t,d) {
 		var dx = d*Math.acos(t)

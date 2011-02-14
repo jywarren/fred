@@ -2,7 +2,7 @@ Fred.Layer = Class.create({
 	initialize: function(name,args) {
 		//validate uniqueness of name in validation namespace
 		Fred.layers.push(this)
-		Fred.element.insert("<canvas style='position:absolute;top:0;left:0;' id='"+name+"'></canvas>")
+		Fred.element.insert("<canvas style='position:absolute;' id='"+name+"'></canvas>")
 		this.name = name
 		this.static = ''
 		this.active = false

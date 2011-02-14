@@ -16,6 +16,7 @@ Fred = {
 	date: new Date,
 	pointer_x: 0,
 	pointer_y: 0,
+	height_offset: 0,
 	style: {},
 	times: [],
 	// Whether the user is dragging.
@@ -32,9 +33,13 @@ Fred = {
 			'gesturestart',
 			'gestureend'],
 			// 'every_<time>', // listener to trigger periodical execution
+
 	init: function(args) {
 		Object.extend(Fred,args)
 		Fred.element = $('fred')
+		$$('body')[0].insert("<style>#fred canvas {display:block;clear:both;}body {margin:0;}</style>")
+		//$$('body')[0].insert('<script src="lib/canvas.js" type="text/javascript"></script>')
+		//$$('body')[0].insert('<script src="lib/shortcut.js" type="text/javascript"></script>')
 		Fred.select_tool('pen')
 		new Fred.Layer('main',{active:true})
 		new Fred.Layer('background')
@@ -46,10 +51,16 @@ Fred = {
 		Fred.observe('mousedown',Fred.on_mousedown)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
-		// Set up the main Fred DOM element:
-		Fred.element.style.position = 'absolute'
-		Fred.element.style.top = 0
-		Fred.element.style.left = 0
+		Fred.currentWidth = 0
+		var updateLayout = function() {
+		if (window.innerWidth != Fred.currentWidth) {
+		    Fred.currentWidth = window.innerWidth;
+		    var orient = (Fred.currentWidth == 320) ? "profile" : "landscape";
+		    document.body.setAttribute("orient", orient);
+		    window.scrollTo(0, 1);
+		}
+		};
+		setInterval(updateLayout, 400);
 		Fred.resize()
 		Event.observe(window, 'resize', Fred.resize_handler);
 		// Access main program grid:
@@ -64,6 +75,7 @@ Fred = {
 		// Initiate main loop:
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
 	},
+
 	draw: function() {
 		Fred.fire('fred:predraw')
 		//calculate fps:
@@ -77,15 +89,27 @@ Fred = {
 		// debug image -- Fred logo
 		if (Fred.logo) {
 			fillStyle('#a00')
-			rect(10,10,40,40)
-			drawText('georgia',15,'white',12,30,'fred')
+			beginPath()
+				moveTo(0,0)
+				lineTo(50,0)
+				lineTo(0,50)
+				lineTo(0,0)
+			fill()
+			save()
+			translate(15,15)
+			rotate(-45)
+			translate(-15,-15)
+				drawText('georgia',12,'white',0,25,'fred')
+			restore()
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
 	},
+
 	pause: function() {
 		TimerManager.paused = true
 	},
+
 	resume: function() {
 		if (Fred.static) {
 			Fred.static = false
@@ -93,12 +117,14 @@ Fred = {
 		}
 		TimerManager.paused = false
 	},
+
 	select_layer: function(layer) {
 		Fred.active_layer = layer
 		$C = Fred.active_layer.canvas
 		Fred.objects = Fred.active_layer.objects
 		Fred.canvas = Fred.active_layer.canvas
 	},
+
 	/*
 	 * Add an object to Fred's active layer and autodetect its event listeners
 	 */
@@ -107,6 +133,7 @@ Fred = {
 		this.attach_listeners(obj)
 		return obj
 	},
+
 	/*
 	 * Remove an object from Fred's active layer and disconnect its event listeners
 	 */
@@ -119,10 +146,12 @@ Fred = {
 		this.detach_listeners(obj)
 		return obj
 	},
+
 	// Used to auto-resize Fred; see Fred.init
 	resize_handler: function(e,width,height) {
 		Fred.resize(width,height)
 	},
+
 	resize: function(width,height) {
 		width = width || document.viewport.getWidth() 
 		height = height || document.viewport.getHeight()
@@ -130,16 +159,17 @@ Fred = {
 		// try running without resizing just in Android -- disable rotate anyway 
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))
 		else Fred.width = width
-		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))
-		else Fred.height = height
-		Fred.element.style.width = width+'px'
-		Fred.element.style.height = height+'px'
+		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))-Fred.height_offset
+		else Fred.height = height-Fred.height_offset
+		Fred.element.width = Fred.width
+		Fred.element.height = Fred.height
 		Fred.layers.each(function(layer){
 			layer.element.width = Fred.width
 			layer.element.height = Fred.height
 		})
 		Fred.draw()
 	},
+
 	/*
 	 * Returns true if an object is a known object class; 
 	 * this should eventually simply check if the object
@@ -155,25 +185,31 @@ Fred = {
 		},this)
 		return passes
 	},
+
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,
 		fontColor: '#222',
 	},
+
 	text: function(text,x,y) {
 		drawText(Fred.text_style.fontFamily,Fred.text_style.fontSize,Fred.text_style.fontColor,x,y,text)
 	},
+
 	on_mouseup: function(e) {
 		Fred.drag = false
 	},
 	on_mousedown: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)
+		if (Fred.pointer_x+Fred.pointer_y < 50) {
+			Fred.toolbar.toggle()
+		}
 		Fred.drag = true
 	},
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
-		Fred.pointer_y = Event.pointerY(e)
+		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 	},
 	on_touchstart: function(e) {
 		Fred.pointer_x = e.touches[0].pageX
@@ -191,6 +227,7 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = false
 	},
+
 	/*
 	 * Deactivate old listeners. Can be run on any object with 
 	 * a stored Hash of listeners, e.g. object.listeners.get(key)
@@ -205,6 +242,7 @@ Fred = {
 			if (method == 'draw') Fred.stop_observing('fred:postdraw',obj.listeners.get('draw'))
 		},this)
 	},
+
 	/*
 	 * Autodetect and activate listeners for any object. Object will receive 
 	 * a stored Hash of listeners, e.g. object.listeners.get(key).
@@ -230,13 +268,16 @@ Fred = {
 			}
 		})
 	},
+
 	select_tool: function(tool) {
 		if (Fred.active_tool) Fred.active_tool.deselect()
 		Fred.detach_listeners(Fred.active_tool)
 		Fred.active_tool = Fred.tools[tool]
 		Fred.active_tool.select()
 		Fred.attach_listeners(Fred.active_tool)
+		if (Fred.toolbar.active) Fred.toolbar.update()
 	},
+
 	/**
 	 * Moves the object (all its points as object.points, including beziers)
 	 * but yields to the objects object.move(x,y,absolute) method if that exists
@@ -269,6 +310,7 @@ Fred = {
 			}
 		}
 	},
+
         /**
 	 * Binds all events to the 'fred' DOM element. Use instead of native Prototype observe.
 	 */
@@ -294,9 +336,12 @@ Fred = {
 	error: function(e) {
 		console.log(e)
 	},
+<<<<<<< HEAD
 	///////////////////////
 	// Miscellaneous functions which may someday find a home:
 	///////////////////////
+=======
+>>>>>>> ef9dc9b1bf30f0b3ac30d8c0f6df461fa2746a02
 
 	/*
 	 * Navigate to a new URL
@@ -346,6 +391,7 @@ console.info = console.info || function(){};
 //= require <tools/place>
 //= require <tools/color>
 
+//= require <toolbar>
 //= require <geometry>
 //= require <dialog>
 //= require <keys>
