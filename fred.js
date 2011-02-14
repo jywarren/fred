@@ -212,14 +212,11 @@ Fred = {
 		Fred.drag = false
 	},
 	on_mousedown: function(e) {
-<<<<<<< HEAD
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)
-=======
 		if (Fred.pointer_x+Fred.pointer_y < 50) {
 			Fred.toolbar.toggle()
 		}
->>>>>>> ef9dc9b1bf30f0b3ac30d8c0f6df461fa2746a02
 		Fred.drag = true
 	},
 	on_mousemove: function(e) {
