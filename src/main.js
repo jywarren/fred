@@ -336,12 +336,9 @@ Fred = {
 	error: function(e) {
 		console.log(e)
 	},
-<<<<<<< HEAD
 	///////////////////////
 	// Miscellaneous functions which may someday find a home:
 	///////////////////////
-=======
->>>>>>> ef9dc9b1bf30f0b3ac30d8c0f6df461fa2746a02
 
 	/*
 	 * Navigate to a new URL
