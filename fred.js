@@ -224,6 +224,9 @@ Fred = {
 		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 	},
 	on_touchstart: function(e) {
+		if (Fred.pointer_x+Fred.pointer_y < 50) {
+			Fred.toolbar.toggle()
+		}
 		Fred.pointer_x = e.touches[0].pageX
 		Fred.pointer_y = e.touches[0].pageY
 		console.log('touch!!')
@@ -1115,6 +1118,8 @@ Fred.tools.place = new Fred.Tool('select & manipulate objects',{
 	}
 })
 Fred.tools.color = new Fred.Tool('assign color to objects',{
+	name: 'color',
+	icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAAAJiS0dEAP+Hj8y/AAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAA2klEQVQoz32QMU7DQBBF30rbUCCkpHaPLdH4BJEoOQMSoqHhAFDkAjRIiNZHSBRqijQgKmhN7YIrEMne+SmM8dqJMqPdYv6bP7PrxOHw8FApUXmXDYXbdT1ryiLzQHLBS7qUgIAQhvHLNc8peAhfq/yICfpPQ5zwSPMOTsBCU2wgG8YPNw48QPgrdvbtHboliYqKTtMDgRBZd2NCDNiof4/DWBbWA030/h7bGbHfwYnzqk6OuRohT3wTyk3mYZPMuaeKFjWgpOAyBUT+eWanH2KY/tWJN7VffSi2LS+tHNedUoUAAAAldEVYdGNyZWF0ZS1kYXRlADIwMTAtMDMtMDlUMDk6MzE6NDYtMDU6MDCQx+NFAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDA2LTAzLTEyVDIxOjU3OjE4LTA1OjAwvZAdJgAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAASUVORK5CYII=',
 	select: function() {
 		this.pane = this.pane || new Fred.Polygon([[0,0],[195,0],[195,40],[0,40]],{complete:true,closed:true})
 		Fred.add(this.pane)
@@ -1140,6 +1145,9 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 			Fred.tools.edit.on_mousedown()
 		}
 	},
+	on_touchstart: function() {
+		this.on_mousedown()
+	}
 })
 
 Fred.toolbar = {
@@ -1198,6 +1206,7 @@ Fred.toolbar = {
 	members: [
 		Fred.tools.pen,
 		Fred.tools.edit,
+		Fred.tools.color,
 	],
 	on_mousedown: function() {
 		if (Fred.pointer_x < this.height) {

@@ -55,6 +55,7 @@ Fred.toolbar = {
 	members: [
 		Fred.tools.pen,
 		Fred.tools.edit,
+		Fred.tools.color,
 	],
 	on_mousedown: function() {
 		if (Fred.pointer_x < this.height) {

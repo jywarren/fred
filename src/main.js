@@ -212,6 +212,9 @@ Fred = {
 		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 	},
 	on_touchstart: function(e) {
+		if (Fred.pointer_x+Fred.pointer_y < 50) {
+			Fred.toolbar.toggle()
+		}
 		Fred.pointer_x = e.touches[0].pageX
 		Fred.pointer_y = e.touches[0].pageY
 		console.log('touch!!')
