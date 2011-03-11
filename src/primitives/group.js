@@ -1,4 +1,5 @@
 // Allows manipulation of groups of objects
+// This is not done. There remains a lot to decide about how this works.
 Fred.Group = Class.create({
 	initialize: function(members,x,y) {
 		if (!Object.isArray(members)) {
@@ -52,6 +53,8 @@ Fred.Group = Class.create({
 		this.drag = false
 	},
 	mouseover: function() {
-
+		var mouseover = false
+		this.members.each(function(member){
+		},this)
 	},
 })

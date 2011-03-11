@@ -14,6 +14,8 @@ Fred = {
 	frame: 0,
 	timestamp: 0,
 	date: new Date,
+	get_timestamp: function() { return Fred.date.getTime() },
+	long_click_time: 3000, // in milliseconds
 	pointer_x: 0,
 	pointer_y: 0,
 	height_offset: 0,
@@ -288,6 +290,7 @@ Fred = {
 	 * current position.
 	 */
 	move: function(obj,x,y,absolute) {
+		absolute = absolute || false
 		// If the object has its own way of moving, this is preferred.
 		// Thinking of tweening, acceleration, recursion
 		if (obj.move) {
@@ -382,6 +385,7 @@ console.info = console.info || function(){};
 //= require <primitives/object>
 //= require <primitives/point>
 //= require <primitives/polygon>
+//= require <primitives/rectangle>
 //= require <primitives/group>
 //= require <primitives/image>
 

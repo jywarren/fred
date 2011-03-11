@@ -17,6 +17,12 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
+- dragging selection is colored by color picker
+- color picker is colored by itself
+- mouse position when menu is open is y-offset
+- tool tray won't close
+- long click not working (in primitives/object.js)
+
 - Group class which can self-contain and matrix transform
 	- grouping key binding 'g' is not working on .select()
 	- Select class is the prototype for this
