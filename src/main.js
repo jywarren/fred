@@ -23,7 +23,6 @@ Fred = {
 	pointer_x: 0,
 	pointer_y: 0,
 	height_offset: 0,
-	style: {},
 	times: [],
 	// Whether the user is dragging.
 	drag: false,
@@ -202,6 +201,16 @@ Fred = {
 		return passes
 	},
 
+	default_style: {
+		fill: '#ccc',
+		stroke: '#222',
+		lineWidth: 1,
+		textsize: 15,
+		textfill: '#222',
+		font: 'georgia',
+		pattern: false,
+		padding: 10,
+	},
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,

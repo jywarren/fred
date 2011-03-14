@@ -23,16 +23,8 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
-		this.style = {
-			fill: '#ccc',
-			stroke: '#222',
-			lineWidth: 2,
-			textsize: 15,
-			textfill: '#222',
-			font: 'georgia',
-			pattern: false,
-			padding: 4,
-		}
+		this.style = {}
+		Object.extend(this.style,Fred.default_style)
 		return this
 	},
 	name: 'untitled polygon',

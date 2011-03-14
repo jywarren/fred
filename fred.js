@@ -51,7 +51,6 @@ Fred = {
 	pointer_x: 0,
 	pointer_y: 0,
 	height_offset: 0,
-	style: {},
 	times: [],
 	drag: false,
 	listeners: [	'mousedown',
@@ -214,6 +213,16 @@ Fred = {
 		return passes
 	},
 
+	default_style: {
+		fill: '#ccc',
+		stroke: '#222',
+		lineWidth: 1,
+		textsize: 15,
+		textfill: '#222',
+		font: 'georgia',
+		pattern: false,
+		padding: 10,
+	},
 	text_style: {
 		fontFamily: 'georgia',
 		fontSize: 15,
@@ -609,16 +618,8 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
-		this.style = {
-			fill: '#ccc',
-			stroke: '#222',
-			lineWidth: 2,
-			textsize: 15,
-			textfill: '#222',
-			font: 'georgia',
-			pattern: false,
-			padding: 4,
-		}
+		this.style = {}
+		Object.extend(this.style,Fred.default_style)
 		return this
 	},
 	name: 'untitled polygon',
@@ -810,15 +811,8 @@ Fred.Rectangle = Class.create(Fred.Polygon,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
-		this.style = {
-			fill: '#ccc',
-			stroke: '#222',
-			lineWidth: 2,
-			textsize: 15,
-			textfill: '#222',
-			font: 'georgia',
-			pattern: false,
-		}
+		this.style = {}
+		Object.extend(this.style,Fred.default_style)
 		return this
 	},
 	set_width: function(width) {
@@ -1277,23 +1271,26 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 Fred.tools.text = new Fred.Tool('write text',{
 	name: 'text',
 	icon: '',
+	sticky: false,
 	select: function() {
 	},
 	deselect: function() {
 	},
 	on_mouseup: function() {
 		var text = prompt("Enter text for this object")
-		obj = new Fred.Rectangle(100,50,Fred.pointer_x,Fred.pointer_y)
+		var obj = new Fred.Rectangle(100,50,Fred.pointer_x,Fred.pointer_y)
 		obj.text = text
 		obj.setup_text()
 		obj.set_width(obj.text_width+parseInt(obj.style.padding))
 		obj.set_height(obj.text_height+parseInt(obj.style.padding))
-		console.log(obj.text_height+parseInt(obj.style.padding))
-		console.log(obj.style.padding)
+		Fred.move(obj,-obj.style.padding,-obj.style.padding,false)
 		obj.set_centroid()
 		obj.style.fill = 'rgba(0,0,0,0)'
 		obj.style.lineWidth = 0
 		Fred.add(obj)
+		if (!this.sticky) {
+			Fred.select_tool('edit')
+		}
 	},
 })
 Fred.tools.script = new Fred.Tool('script object behaviors',{
