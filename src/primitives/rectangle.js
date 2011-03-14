@@ -27,4 +27,12 @@ Fred.Rectangle = Class.create(Fred.Polygon,{
 		}
 		return this
 	},
+	set_width: function(width) {
+		this.points[1].x = this.points[0].x+width
+		this.points[2].x = this.points[0].x+width
+	},
+	set_height: function(height) {
+		this.points[2].y = this.points[0].y+height
+		this.points[3].y = this.points[0].y+height
+	},
 })

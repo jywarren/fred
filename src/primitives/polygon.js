@@ -31,6 +31,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			textfill: '#222',
 			font: 'georgia',
 			pattern: false,
+			padding: 4,
 		}
 		return this
 	},
@@ -147,10 +148,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 				restore()
 			}
 			stroke()
-			// draw text here
-			if (this.text) {
-				drawText(this.style.font,this.style.textsize,this.style.textfill,this.x,this.y,this.text)
-			}
+			this.draw_text()
 
 			if (this.show_highlights) { 
 			this.points.each(function(point){
@@ -222,5 +220,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 			}
 		}
-	}
+	},
+	on_longclick: function() {
+	},
 })

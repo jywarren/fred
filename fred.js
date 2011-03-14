@@ -43,7 +43,11 @@ Fred = {
 	timestamp: 0,
 	date: new Date,
 	get_timestamp: function() { return Fred.date.getTime() },
-	long_click_time: 3000, // in milliseconds
+	longclicked: false, // instead of reinitializing the longclick timers, this allows users to continue monitoring how long the mouse is held down
+	longclick_time: 1000, // in milliseconds, how long the mouse must be pressed to trigger a longclick
+	mousedown_start_time: 0, // when the mouse was pressed
+	mousedown_time: 0, // how long the mouse has been down
+	mouse_is_down: false, // whether the mouse is currently down
 	pointer_x: 0,
 	pointer_y: 0,
 	height_offset: 0,
@@ -58,7 +62,8 @@ Fred = {
 			'touchmove',
 			'touchend',
 			'gesturestart',
-			'gestureend'],
+			'gestureend',
+			'fred:longclick'], // this is implemented in Fred, not natively
 
 	init: function(args) {
 		Object.extend(Fred,args)
@@ -72,6 +77,8 @@ Fred = {
 		Fred.observe('touchmove',Fred.on_touchmove)
 		Fred.observe('mouseup',Fred.on_mouseup)
 		Fred.observe('mousedown',Fred.on_mousedown)
+		Fred.observe('dblclick',Fred.on_dblclick)
+		Fred.observe('fred:longclick',Fred.on_longclick)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
 		Fred.currentWidth = 0
@@ -121,6 +128,13 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
+		Fred.mousedown_time = Fred.get_timestamp() - Fred.mousedown_start_time
+		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_time > Fred.longclick_time) {
+			if (true) { //mouse has not moved, much
+				Fred.fire('fred:longclick')
+				Fred.longclicked = true
+			}
+		}
 	},
 
 	pause: function() {
@@ -212,18 +226,32 @@ Fred = {
 
 	on_mouseup: function(e) {
 		Fred.drag = false
+		Fred.mouse_is_down = false
 	},
 	on_mousedown: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
-		Fred.pointer_y = Event.pointerY(e)
+		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 		if (Fred.pointer_x+Fred.pointer_y < 50) {
 			Fred.toolbar.toggle()
 		}
 		Fred.drag = true
+		Fred.mouse_is_down = true
+		Fred.longclicked = false
+		Fred.mousedown_start_time = Fred.get_timestamp()
 	},
+
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
+	},
+
+	on_dblclick: function(e) {
+	},
+
+	/*
+	 * This is Fred-created, not a standard JavaScript event, so it has no "e" parameter
+	 */
+	on_longclick: function() {
 	},
 	on_touchstart: function(e) {
 		if (Fred.pointer_x+Fred.pointer_y < 50) {
@@ -252,7 +280,9 @@ Fred = {
 	detach_listeners: function(obj) {
 		$H(obj).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
+				if (event.substr(0,5) == "fred:") e = event.substr(5,event.length)
+				else e = event
+				if (method == ('on_'+e)) {
 					Fred.stop_observing(event,obj.listeners.get(method))
 				}
 			},this)
@@ -273,7 +303,9 @@ Fred = {
 		obj.listeners = new Hash
 		$H(obj).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
+				if (event.substr(0,5) == "fred:") e = event.substr(5,event.length)
+				else e = event
+				if (method == ('on_'+e)) {
 					obj.listeners.set(method,obj[method].bindAsEventListener(obj))
 					Fred.observe(event,obj.listeners.get(method))
 				}
@@ -427,6 +459,12 @@ Fred.selection = {
 		this.recalc_xy()
 		return obj
 	},
+	first: function() {
+		return this.members[0]
+	},
+	last: function() {
+		return this.members.last()
+	},
 	clear: function() {
 		this.history.push(this.members)
 		this.members.each(function(obj) {
@@ -514,20 +552,31 @@ Fred.selection = {
 }
 
 Fred.Object = Class.create({
-
-	on_mousedown: function() {
-		this.mouse_is_down = true
-		this.mousedown_time = Fred.get_timestamp()
-		this.long_click_timer = setTimeout(Fred.long_click_time,this.on_long_click.apply(this))
-		console.log('setup long click timer')
+	/*
+	 * Setup text metrics such as x,y position, interpret alignment and valign
+	 */
+	setup_text: function() {
+		this.text_width = measureText(this.style.font,this.style.textsize,this.text)
+		this.text_height = this.style.textsize
 	},
-	on_mouseup: function() {
-		this.mouse_is_down = false
-	},
-	on_long_click: function() {
-		console.log('long click!')
-	},
-
+	/*
+	 * Draw text in the object
+	 */
+	draw_text: function() {
+		if (this.style.text_align == 'left') {
+			this.text_x = this.x
+		} else if (this.style.text_align == 'right') {
+			this.text_x = this.x-this.text_width
+		} else {//if (this.style.text_align == 'center') {
+			this.text_x = this.x-this.text_width/2
+		}
+		if (true) { // eventually deal with vertical align here
+			this.text_y = this.y+this.text_height/2
+		}
+		if (this.text) {
+			drawText(this.style.font,this.style.textsize,this.style.textfill,this.text_x,this.text_y,this.text)
+		}
+	}
 })
 Fred.Point = Class.create({
 	initialize: function(x,y) {
@@ -568,6 +617,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			textfill: '#222',
 			font: 'georgia',
 			pattern: false,
+			padding: 4,
 		}
 		return this
 	},
@@ -671,9 +721,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 				restore()
 			}
 			stroke()
-			if (this.text) {
-				drawText(this.style.font,this.style.textsize,this.style.textfill,this.x,this.y,this.text)
-			}
+			this.draw_text()
 
 			if (this.show_highlights) {
 			this.points.each(function(point){
@@ -741,7 +789,9 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 			}
 		}
-	}
+	},
+	on_longclick: function() {
+	},
 })
 Fred.Rectangle = Class.create(Fred.Polygon,{
 	initialize: function(width,height,x,y) {
@@ -770,6 +820,14 @@ Fred.Rectangle = Class.create(Fred.Polygon,{
 			pattern: false,
 		}
 		return this
+	},
+	set_width: function(width) {
+		this.points[1].x = this.points[0].x+width
+		this.points[2].x = this.points[0].x+width
+	},
+	set_height: function(height) {
+		this.points[2].y = this.points[0].y+height
+		this.points[3].y = this.points[0].y+height
 	},
 })
 Fred.Group = Class.create({
@@ -949,15 +1007,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	},
 	deselect: function() {
 	},
-	on_dblclick: function() {
-		if (!Fred.selection.empty) {
-			Fred.selection.each(function(selection) {
-				var existing = selection.script || "on_mouseup: function() { console.log('hi') }"
-				input = prompt("Edit this object's code:",existing)
-				if (input != null) selection.script = ("{"+input+"}").evalJSON()
-				Fred.attach_listeners(selection.script)
-			},this)
-		}
+	on_dblclick: function(e) {
+		Fred.selection.first().text = prompt("Enter text for this object")
+		Fred.selection.first().setup_text()
 	},
 	on_mousedown: function() {
 		this.click_x = Fred.pointer_x
@@ -1195,7 +1247,7 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 			Fred.selection.each(function(selection){
 				selection.style.fill = "rgba("+color[0]+","+color[1]+","+color[2]+","+color[3]+")"
 			},this)
-		} else if (Fred.Geometry.is_point_in_poly(this.panel.points,Fred.pointer_x,Fred.pointer_y)){
+		} else {// if (Fred.Geometry.is_point_in_poly(this.panel.points,Fred.pointer_x,Fred.pointer_y)){
 			this.mode = 'edit' // acts like edit for dragging around the panel
 			Fred.tools.edit.on_mousedown()
 		}
@@ -1220,6 +1272,46 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 	},
 	on_touchmove: function() {
 		this.on_mousemove()
+	},
+})
+Fred.tools.text = new Fred.Tool('write text',{
+	name: 'text',
+	icon: '',
+	select: function() {
+	},
+	deselect: function() {
+	},
+	on_mouseup: function() {
+		var text = prompt("Enter text for this object")
+		obj = new Fred.Rectangle(100,50,Fred.pointer_x,Fred.pointer_y)
+		obj.text = text
+		obj.setup_text()
+		obj.set_width(obj.text_width+parseInt(obj.style.padding))
+		obj.set_height(obj.text_height+parseInt(obj.style.padding))
+		console.log(obj.text_height+parseInt(obj.style.padding))
+		console.log(obj.style.padding)
+		obj.set_centroid()
+		obj.style.fill = 'rgba(0,0,0,0)'
+		obj.style.lineWidth = 0
+		Fred.add(obj)
+	},
+})
+Fred.tools.script = new Fred.Tool('script object behaviors',{
+	name: 'script',
+	icon: '',
+	select: function() {
+	},
+	deselect: function() {
+	},
+	on_dblclick: function() {
+		if (!Fred.selection.empty) {
+			Fred.selection.each(function(selection) {
+				var existing = selection.script || "on_mouseup: function() { console.log('hi') }"
+				input = prompt("Edit this object's code:",existing)
+				if (input != null) selection.script = ("{"+input+"}").evalJSON()
+				Fred.attach_listeners(selection.script)
+			},this)
+		}
 	},
 })
 
@@ -1280,6 +1372,8 @@ Fred.toolbar = {
 		Fred.tools.pen,
 		Fred.tools.edit,
 		Fred.tools.color,
+		Fred.tools.text,
+		Fred.tools.script,
 	],
 	on_mousedown: function() {
 		if (Fred.pointer_x < this.height) {
@@ -1378,6 +1472,8 @@ Fred.keys = {
 		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
 		'c': function(){ Fred.select_tool('color') },
+		't': function(){ Fred.select_tool('text') },
+		's': function(){ Fred.select_tool('script') },
 	}),
 	current: $H({
 

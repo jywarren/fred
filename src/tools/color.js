@@ -31,7 +31,7 @@ Fred.tools.color = new Fred.Tool('assign color to objects',{
 			Fred.selection.each(function(selection){
 				selection.style.fill = "rgba("+color[0]+","+color[1]+","+color[2]+","+color[3]+")"
 			},this)
-		} else if (Fred.Geometry.is_point_in_poly(this.panel.points,Fred.pointer_x,Fred.pointer_y)){
+		} else {// if (Fred.Geometry.is_point_in_poly(this.panel.points,Fred.pointer_x,Fred.pointer_y)){
 			this.mode = 'edit' // acts like edit for dragging around the panel
 			Fred.tools.edit.on_mousedown()
 		}

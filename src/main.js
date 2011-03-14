@@ -15,7 +15,11 @@ Fred = {
 	timestamp: 0,
 	date: new Date,
 	get_timestamp: function() { return Fred.date.getTime() },
-	long_click_time: 3000, // in milliseconds
+	longclicked: false, // instead of reinitializing the longclick timers, this allows users to continue monitoring how long the mouse is held down
+	longclick_time: 1000, // in milliseconds, how long the mouse must be pressed to trigger a longclick
+	mousedown_start_time: 0, // when the mouse was pressed
+	mousedown_time: 0, // how long the mouse has been down
+	mouse_is_down: false, // whether the mouse is currently down
 	pointer_x: 0,
 	pointer_y: 0,
 	height_offset: 0,
@@ -33,7 +37,8 @@ Fred = {
 			'touchmove',
 			'touchend',
 			'gesturestart',
-			'gestureend'],
+			'gestureend',
+			'fred:longclick'], // this is implemented in Fred, not natively
 			// 'every_<time>', // listener to trigger periodical execution
 
 	init: function(args) {
@@ -51,6 +56,8 @@ Fred = {
 		Fred.observe('touchmove',Fred.on_touchmove)
 		Fred.observe('mouseup',Fred.on_mouseup)
 		Fred.observe('mousedown',Fred.on_mousedown)
+		Fred.observe('dblclick',Fred.on_dblclick)
+		Fred.observe('fred:longclick',Fred.on_longclick)
 		Fred.observe('touchstart',Fred.on_touchstart)
 		Fred.observe('touchend',Fred.on_touchend)
 		Fred.currentWidth = 0
@@ -106,6 +113,13 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
+		Fred.mousedown_time = Fred.get_timestamp() - Fred.mousedown_start_time
+		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_time > Fred.longclick_time) {
+			if (true) { //mouse has not moved, much
+				Fred.fire('fred:longclick')
+				Fred.longclicked = true
+			}
+		}
 	},
 
 	pause: function() {
@@ -200,18 +214,35 @@ Fred = {
 
 	on_mouseup: function(e) {
 		Fred.drag = false
+		Fred.mouse_is_down = false
 	},
 	on_mousedown: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
-		Fred.pointer_y = Event.pointerY(e)
+		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
 		if (Fred.pointer_x+Fred.pointer_y < 50) {
 			Fred.toolbar.toggle()
 		}
 		Fred.drag = true
+		Fred.mouse_is_down = true
+		// this may be more appropriate in on_mouseup -- 
+		// it depends if we consider longclicked to be valid all
+		// the way until the next mousedown
+		Fred.longclicked = false
+		Fred.mousedown_start_time = Fred.get_timestamp()
 	},
+
 	on_mousemove: function(e) {
 		Fred.pointer_x = Event.pointerX(e)
 		Fred.pointer_y = Event.pointerY(e)-Fred.height_offset
+	},
+
+	on_dblclick: function(e) {
+	},
+
+	/*
+	 * This is Fred-created, not a standard JavaScript event, so it has no "e" parameter
+	 */
+	on_longclick: function() {
 	},
 	on_touchstart: function(e) {
 		if (Fred.pointer_x+Fred.pointer_y < 50) {
@@ -240,7 +271,10 @@ Fred = {
 	detach_listeners: function(obj) {
 		$H(obj).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
+				// if it's a custom event, it'll have the "fred:" prefix
+				if (event.substr(0,5) == "fred:") e = event.substr(5,event.length)
+				else e = event
+				if (method == ('on_'+e)) {
 					Fred.stop_observing(event,obj.listeners.get(method))
 				}
 			},this)
@@ -262,7 +296,10 @@ Fred = {
 		// Scan tool for on_foo listeners, connect them to available events:
 		$H(obj).keys().each(function(method) {
 			Fred.listeners.each(function(event) {
-				if (method == ('on_'+event)) {
+				// if it's a custom event, it'll have the "fred:" prefix
+				if (event.substr(0,5) == "fred:") e = event.substr(5,event.length)
+				else e = event
+				if (method == ('on_'+e)) {
 					obj.listeners.set(method,obj[method].bindAsEventListener(obj))
 					Fred.observe(event,obj.listeners.get(method))
 				}
@@ -394,6 +431,8 @@ console.info = console.info || function(){};
 //= require <tools/pen>
 //= require <tools/place>
 //= require <tools/color>
+//= require <tools/text>
+//= require <tools/script>
 
 //= require <toolbar>
 //= require <geometry>

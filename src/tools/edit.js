@@ -17,16 +17,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	deselect: function() {
 		// here go things which must happen when the tool is activated
 	},
-	on_dblclick: function() {
-		// default edit behavior opens a menu to edit that object. The only option right now is to input code into its 'script' property.
-		if (!Fred.selection.empty) {
-			Fred.selection.each(function(selection) {
-				var existing = selection.script || "on_mouseup: function() { console.log('hi') }"
-				input = prompt("Edit this object's code:",existing)
-				if (input != null) selection.script = ("{"+input+"}").evalJSON()
-				Fred.attach_listeners(selection.script)
-			},this)
-		}
+	on_dblclick: function(e) {
+		Fred.selection.first().text = prompt("Enter text for this object")
+		Fred.selection.first().setup_text()
 	},
 	on_mousedown: function() {
 		// record offset of x,y from mouse

@@ -18,6 +18,8 @@ Fred.keys = {
 		'e': function(){ Fred.select_tool('edit') },
 		'p': function(){ Fred.select_tool('pen') },
 		'c': function(){ Fred.select_tool('color') },
+		't': function(){ Fred.select_tool('text') },
+		's': function(){ Fred.select_tool('script') },
 	}),
 	current: $H({
 		
