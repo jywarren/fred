@@ -39,6 +39,12 @@ Fred.selection = {
 		this.recalc_xy()
 		return obj
 	},
+	first: function() {
+		return this.members[0]
+	},
+	last: function() {
+		return this.members.last()
+	},
 	clear: function() {
 		this.history.push(this.members)
 		this.members.each(function(obj) {

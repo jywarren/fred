@@ -17,15 +17,17 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
-- Group class which can self-contain and matrix transform
+- dragging selection is colored by color picker
+- color picker is colored by itself
+
+- Group class which can self-contain and matrix transform (this will stop mouseclicks getting to members... ug)
 	- grouping key binding 'g' is not working on .select()
 	- Select class is the prototype for this
 - Fred.drag is broken. Edit tool is using Fred.tools.edit.dragging
 - .make_draggable() sets up .dragging based on is_mousewithin() -also is_draggable = true
 	- generates an on_drag() call
 	- or default to polygon is_mousewithin()
-- revise on_mousedown to only fire when pointer is within. function($super) { $super() } ?
-	- or have on_mousedown_within
+- add on_mousedown_within to only fire when pointer is within, if it conforms to Polygon? 
 - text in polygons, text tool to edit text, 
 	- doubleclick in select tool to switch to text tool
 - url hash rewriting, to generate permalinks for different states?
@@ -38,7 +40,7 @@ To-do:
 - tool selection for mobile devices
 - line 73 of pen.js shouldn't be necessary - modifier key not turning off
 - shift key locks line drawing to 45 degree angles
-- clicking on bezier polygons
+- clicking on bezier polygons (currently treats them like linear polys)
 	- clicking on bezier lines: http://algorithmist.wordpress.com/2008/08/15/closest-point-on-bezier-code/
 
 - full iPhone/Android multitouch, with editing UI

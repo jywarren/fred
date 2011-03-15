@@ -23,15 +23,8 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.rotation = 0
 		this.rotation_point = false
 		this.show_highlights = true
-		this.style = {
-			fill: '#ccc',
-			stroke: '#222',
-			lineWidth: 2,
-			textsize: 15,
-			textfill: '#222',
-			font: 'georgia',
-			pattern: false,
-		}
+		this.style = {}
+		Object.extend(this.style,Fred.default_style)
 		return this
 	},
 	name: 'untitled polygon',
@@ -90,7 +83,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 		if (this.points) {
 			var in_point = false
 			this.points.each(function(point) {
-				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < this.point_size) in_point = point
+				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < Fred.click_radius) in_point = point
 			},this)
 			return in_point
 		} else  {
@@ -103,8 +96,8 @@ Fred.Polygon = Class.create(Fred.Object,{
 		if (this.points) {
 			var in_bezier = false
 			this.points.each(function(point){
-				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y) < this.point_size) in_bezier = [point.bezier.prev,point]
-				else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x+point.bezier.next.x,point.y+point.bezier.next.y) < this.point_size) in_bezier = [point.bezier.next,point]
+				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y) < Fred.click_radius) in_bezier = [point.bezier.prev,point]
+				else if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x+point.bezier.next.x,point.y+point.bezier.next.y) < Fred.click_radius) in_bezier = [point.bezier.next,point]
 			},this)
 			return in_bezier
 		} else return false
@@ -147,24 +140,21 @@ Fred.Polygon = Class.create(Fred.Object,{
 				restore()
 			}
 			stroke()
-			// draw text here
-			if (this.text) {
-				drawText(this.style.font,this.style.textsize,this.style.textfill,this.x,this.y,this.text)
-			}
+			this.draw_text()
 
 			if (this.show_highlights) { 
 			this.points.each(function(point){
 				save()
 				opacity(0.2)
-				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < this.point_size) {
+				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < Fred.click_radius) {
 					opacity(0.4)
 					over_point = true
 					fillStyle('#f55')
-					rect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
+					rect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				} else if (this.selected) {
 					lineWidth(2)
 					strokeStyle('#f55')
-					strokeRect(point.x-this.point_size/2,point.y-this.point_size/2,this.point_size,this.point_size)
+					strokeRect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				}
 				restore()
 			},this)
@@ -222,5 +212,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 			}
 		}
-	}
+	},
+	on_longclick: function() {
+	},
 })
