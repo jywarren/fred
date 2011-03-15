@@ -99,6 +99,8 @@ Fred = {
 		if (Fred.local_setup) Fred.local_setup()
 		if (Fred.local_draw) Fred.local_draw()
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
+		console.log(Fred)
+		console.log(Fred.height)
 	},
 
 	draw: function() {
@@ -184,6 +186,8 @@ Fred = {
 	resize: function(width,height) {
 		width = width || document.viewport.getWidth()
 		height = height || document.viewport.getHeight()
+		width = width || screen.width
+		height = height || screen.height
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))
 		else Fred.width = width
 		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))-Fred.height_offset
@@ -267,19 +271,23 @@ Fred = {
 			Fred.toolbar.toggle()
 		}
 		Fred.pointer_x = e.touches[0].pageX
-		Fred.pointer_y = e.touches[0].pageY
+		Fred.pointer_y = e.touches[0].pageY-Fred.height_offset
 		console.log('touch!!')
 		e.preventDefault()
 		Fred.drag = true
+		Fred.mouse_is_down = true
+		Fred.longclicked = false
+		Fred.mousedown_start_time = Fred.get_timestamp()
 	},
 	on_touchmove: function(e) {
 		e.preventDefault()
 		Fred.pointer_x = e.touches[0].pageX
-		Fred.pointer_y = e.touches[0].pageY
+		Fred.pointer_y = e.touches[0].pageY-Fred.height_offset
 	},
 	on_touchend: function(e) {
 		e.preventDefault()
 		Fred.drag = false
+		Fred.mouse_is_down = false
 	},
 
 	/*
@@ -1348,6 +1356,9 @@ Fred.tools.text = new Fred.Tool('write text',{
 		if (!this.sticky) {
 			Fred.select_tool('edit')
 		}
+	},
+	on_touchend: function() {
+		this.on_mouseup()
 	},
 })
 Fred.tools.script = new Fred.Tool('script object behaviors',{
