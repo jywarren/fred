@@ -28,4 +28,7 @@ Fred.tools.text = new Fred.Tool('write text',{
 			Fred.select_tool('edit')
 		}
 	},
+	on_touchend: function() {
+		this.on_mouseup()
+	},
 })

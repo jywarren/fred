@@ -82,6 +82,8 @@ Fred = {
 		if (Fred.local_draw) Fred.local_draw()
 		// Initiate main loop:
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
+		console.log(Fred)
+		console.log(Fred.height)
 	},
 
 	draw: function() {
@@ -170,8 +172,9 @@ Fred = {
 	resize: function(width,height) {
 		width = width || document.viewport.getWidth() 
 		height = height || document.viewport.getHeight()
-		// document.viewport.getWidth() yields undefined in Android browser
-		// try running without resizing just in Android -- disable rotate anyway 
+		// document.viewport.getWidth() yields undefined in Android browser:
+		width = width || screen.width
+		height = height || screen.height
 		if (width[width.length-1] == '%') Fred.width = parseInt(document.viewport.getWidth()*100/width.substr(0,width.length-1))
 		else Fred.width = width
 		if (height[height.length-1] == '%') Fred.height = parseInt(document.viewport.getHeight()*100/height.substr(0,height.length-1))-Fred.height_offset
@@ -258,19 +261,26 @@ Fred = {
 			Fred.toolbar.toggle()
 		}
 		Fred.pointer_x = e.touches[0].pageX
-		Fred.pointer_y = e.touches[0].pageY
+		Fred.pointer_y = e.touches[0].pageY-Fred.height_offset
 		console.log('touch!!')
 		e.preventDefault()
 		Fred.drag = true
+		Fred.mouse_is_down = true
+		// this may be more appropriate in on_mouseup -- 
+		// it depends if we consider longclicked to be valid all
+		// the way until the next mousedown
+		Fred.longclicked = false
+		Fred.mousedown_start_time = Fred.get_timestamp()
 	},
 	on_touchmove: function(e) {
 		e.preventDefault()
 		Fred.pointer_x = e.touches[0].pageX
-		Fred.pointer_y = e.touches[0].pageY
+		Fred.pointer_y = e.touches[0].pageY-Fred.height_offset
 	},
 	on_touchend: function(e) {
 		e.preventDefault()
 		Fred.drag = false
+		Fred.mouse_is_down = false
 	},
 
 	/*
