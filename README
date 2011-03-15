@@ -68,3 +68,14 @@ adb kill-server
 sudo adb start-server
 adb logcat browser:V *:S
 
+===========================================
+Icon sources:
+
+http://www.famfamfam.com/lab/icons/silk/
+http://git.gnome.org/browse/gimp/tree/themes/Default/images
+
+Potential sources:
+
+http://www.greepit.com/open-source-icons-gcons/
+http://sublink.ca/icons/sweetieplus/
+

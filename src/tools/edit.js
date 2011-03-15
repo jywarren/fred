@@ -17,6 +17,9 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	deselect: function() {
 		// here go things which must happen when the tool is activated
 	},
+	on_longclick: function() {
+		this.on_dblclick()
+	},
 	on_dblclick: function(e) {
 		Fred.selection.first().text = prompt("Enter text for this object")
 		Fred.selection.first().setup_text()
