@@ -17,8 +17,12 @@ There is usually a reasonably recent demo available at http://fred.unterbahn.com
 
 To-do:
 
-- dragging selection is colored by color picker
-- color picker is colored by itself
+- text toolbar: alignment, text size, font, text color
+- text wrapping
+- style toolbar: line width, line color
+- edit polygons with CPs, edit beziers with mod key + CPs
+- color, linewidth, fill style panel, swipe open?
+	- this is the nascent Fred.Tray class. Jeff's workin on it
 
 - Group class which can self-contain and matrix transform (this will stop mouseclicks getting to members... ug)
 	- grouping key binding 'g' is not working on .select()
@@ -28,22 +32,18 @@ To-do:
 	- generates an on_drag() call
 	- or default to polygon is_mousewithin()
 - add on_mousedown_within to only fire when pointer is within, if it conforms to Polygon? 
-- text in polygons, text tool to edit text, 
-	- doubleclick in select tool to switch to text tool
 - url hash rewriting, to generate permalinks for different states?
 - styling in CSS-like syntax (like Cartagen)
 - fix android viewport width/height
 	- try removeing Fred.resize() entirely
 - alias events like on_touchstart > on_mousedown
-- color, linewidth, fill style panel, swipe open?
-	- this is the nascent Fred.Tray class. Jeff's workin on it
-- tool selection for mobile devices
 - line 73 of pen.js shouldn't be necessary - modifier key not turning off
 - shift key locks line drawing to 45 degree angles
 - clicking on bezier polygons (currently treats them like linear polys)
 	- clicking on bezier lines: http://algorithmist.wordpress.com/2008/08/15/closest-point-on-bezier-code/
 
 - full iPhone/Android multitouch, with editing UI
+- use Android call "window.devicePixelRatio" for pixel density
 - this list is getting more ambitious as it goes so I'll finish now
 
 ===========================================
@@ -60,4 +60,11 @@ Tools 'take over' mouse events and must have:
 	- the deselect() method is called when you switch to a different tool, and must unsubscribe the tools listeners
 - <tool>.draw() method which is called every frame
 - <tool>.description, a string which describes the tool (used in tooltips and menus) 
+
+===========================================
+To debug from Android with the Android Debug Bridge:
+
+adb kill-server
+sudo adb start-server
+adb logcat browser:V *:S
 
