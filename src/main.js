@@ -3,7 +3,6 @@
 // Central Fred source file; all other files are linked to from here.
 Fred = {
 	click_radius: 6,
-	selection_color: '#a00',
 	speed: 1000,
 	height: '100%',
 	width: '100%',
@@ -18,7 +17,7 @@ Fred = {
 	longclicked: false, // instead of reinitializing the longclick timers, this allows users to continue monitoring how long the mouse is held down
 	longclick_time: 1000, // in milliseconds, how long the mouse must be pressed to trigger a longclick
 	mousedown_start_time: 0, // when the mouse was pressed
-	mousedown_time: 0, // how long the mouse has been down
+	mousedown_duration: 0, // how long the mouse has been down
 	mouse_is_down: false, // whether the mouse is currently down
 	pointer_x: 0,
 	pointer_y: 0,
@@ -50,7 +49,7 @@ Fred = {
 		new Fred.Layer('main',{active:true})
 		new Fred.Layer('background')
 		Fred.select_layer(Fred.layers.first())
-		// Event handling setup:
+		// Master event handling setup:
 		Fred.observe('mousemove',Fred.on_mousemove)
 		Fred.observe('touchmove',Fred.on_touchmove)
 		Fred.observe('mouseup',Fred.on_mouseup)
@@ -82,8 +81,6 @@ Fred = {
 		if (Fred.local_draw) Fred.local_draw()
 		// Initiate main loop:
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
-		console.log(Fred)
-		console.log(Fred.height)
 	},
 
 	draw: function() {
@@ -114,9 +111,9 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
-		Fred.mousedown_time = Fred.get_timestamp() - Fred.mousedown_start_time
-		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_time > Fred.longclick_time) {
-			if (true) { //mouse has not moved, much
+		Fred.mousedown_duration = Fred.get_timestamp() - Fred.mousedown_start_time
+		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_duration > Fred.longclick_time) {
+			if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,Fred.mousedown_x,Fred.mousedown_y) < Fred.click_radius) { //mouse has not moved, much
 				Fred.fire('fred:longclick')
 				Fred.longclicked = true
 			}
@@ -208,20 +205,25 @@ Fred = {
 		fill: '#ccc',
 		stroke: '#222',
 		lineWidth: 1,
-		textsize: 15,
-		textfill: '#222',
-		font: 'georgia',
+		fontSize: 15,
+		fontColor: '#222',
+		fontFamily: 'georgia',
 		pattern: false,
 		padding: 10,
 	},
-	text_style: {
-		fontFamily: 'georgia',
+	highlight_style: {
+		fill: 'rgba(200,0,0,0.1)',
+		stroke: 'rgba(200,0,0,0.2)',
+		lineWidth: 2,
 		fontSize: 15,
 		fontColor: '#222',
+		fontFamily: 'georgia',
+		pattern: false,
+		padding: 10,
 	},
 
 	text: function(text,x,y) {
-		drawText(Fred.text_style.fontFamily,Fred.text_style.fontSize,Fred.text_style.fontColor,x,y,text)
+		drawText(Fred.default_style.fontFamily,Fred.default_style.fontSize,Fred.default_style.fontColor,x,y,text)
 	},
 
 	on_mouseup: function(e) {
@@ -235,6 +237,8 @@ Fred = {
 			Fred.toolbar.toggle()
 		}
 		Fred.drag = true
+		Fred.mousedown_x = Fred.pointer_x
+		Fred.mousedown_y = Fred.pointer_y
 		Fred.mouse_is_down = true
 		// this may be more appropriate in on_mouseup -- 
 		// it depends if we consider longclicked to be valid all
@@ -266,6 +270,8 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = true
 		Fred.mouse_is_down = true
+		Fred.mousedown_x = Fred.pointer_x
+		Fred.mousedown_y = Fred.pointer_y
 		// this may be more appropriate in on_mouseup -- 
 		// it depends if we consider longclicked to be valid all
 		// the way until the next mousedown

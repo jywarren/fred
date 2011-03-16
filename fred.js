@@ -32,7 +32,6 @@ var TimerManager = {
 
 Fred = {
 	click_radius: 6,
-	selection_color: '#a00',
 	speed: 1000,
 	height: '100%',
 	width: '100%',
@@ -46,7 +45,7 @@ Fred = {
 	longclicked: false, // instead of reinitializing the longclick timers, this allows users to continue monitoring how long the mouse is held down
 	longclick_time: 1000, // in milliseconds, how long the mouse must be pressed to trigger a longclick
 	mousedown_start_time: 0, // when the mouse was pressed
-	mousedown_time: 0, // how long the mouse has been down
+	mousedown_duration: 0, // how long the mouse has been down
 	mouse_is_down: false, // whether the mouse is currently down
 	pointer_x: 0,
 	pointer_y: 0,
@@ -99,8 +98,6 @@ Fred = {
 		if (Fred.local_setup) Fred.local_setup()
 		if (Fred.local_draw) Fred.local_draw()
 		if (!Fred.static) TimerManager.setup(Fred.draw,this,Fred.speed)
-		console.log(Fred)
-		console.log(Fred.height)
 	},
 
 	draw: function() {
@@ -129,9 +126,9 @@ Fred = {
 		}
 		if (Fred.debug) drawText('georgia',12,'black',Fred.width-60,30,Fred.fps+' fps')
 		if (Fred.local_draw) Fred.local_draw()
-		Fred.mousedown_time = Fred.get_timestamp() - Fred.mousedown_start_time
-		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_time > Fred.longclick_time) {
-			if (true) { //mouse has not moved, much
+		Fred.mousedown_duration = Fred.get_timestamp() - Fred.mousedown_start_time
+		if (Fred.mouse_is_down && !Fred.longclicked && Fred.mousedown_duration > Fred.longclick_time) {
+			if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,Fred.mousedown_x,Fred.mousedown_y) < Fred.click_radius) { //mouse has not moved, much
 				Fred.fire('fred:longclick')
 				Fred.longclicked = true
 			}
@@ -221,20 +218,25 @@ Fred = {
 		fill: '#ccc',
 		stroke: '#222',
 		lineWidth: 1,
-		textsize: 15,
-		textfill: '#222',
-		font: 'georgia',
+		fontSize: 15,
+		fontColor: '#222',
+		fontFamily: 'georgia',
 		pattern: false,
 		padding: 10,
 	},
-	text_style: {
-		fontFamily: 'georgia',
+	highlight_style: {
+		fill: 'rgba(200,0,0,0.1)',
+		stroke: 'rgba(200,0,0,0.2)',
+		lineWidth: 2,
 		fontSize: 15,
 		fontColor: '#222',
+		fontFamily: 'georgia',
+		pattern: false,
+		padding: 10,
 	},
 
 	text: function(text,x,y) {
-		drawText(Fred.text_style.fontFamily,Fred.text_style.fontSize,Fred.text_style.fontColor,x,y,text)
+		drawText(Fred.default_style.fontFamily,Fred.default_style.fontSize,Fred.default_style.fontColor,x,y,text)
 	},
 
 	on_mouseup: function(e) {
@@ -248,6 +250,8 @@ Fred = {
 			Fred.toolbar.toggle()
 		}
 		Fred.drag = true
+		Fred.mousedown_x = Fred.pointer_x
+		Fred.mousedown_y = Fred.pointer_y
 		Fred.mouse_is_down = true
 		Fred.longclicked = false
 		Fred.mousedown_start_time = Fred.get_timestamp()
@@ -276,6 +280,8 @@ Fred = {
 		e.preventDefault()
 		Fred.drag = true
 		Fred.mouse_is_down = true
+		Fred.mousedown_x = Fred.pointer_x
+		Fred.mousedown_y = Fred.pointer_y
 		Fred.longclicked = false
 		Fred.mousedown_start_time = Fred.get_timestamp()
 	},
@@ -573,25 +579,25 @@ Fred.Object = Class.create({
 	 * Setup text metrics such as x,y position, interpret alignment and valign
 	 */
 	setup_text: function() {
-		this.text_width = measureText(this.style.font,this.style.textsize,this.text)
-		this.text_height = this.style.textsize
+		this.text_width = measureText(this.style.fontFamily,this.style.fontSize,this.text)
+		this.text_height = this.style.fontSize
 	},
 	/*
 	 * Draw text in the object
 	 */
 	draw_text: function() {
-		if (this.style.text_align == 'left') {
+		if (this.style.textAlign == 'left') {
 			this.text_x = this.x
-		} else if (this.style.text_align == 'right') {
+		} else if (this.style.textAlign == 'right') {
 			this.text_x = this.x-this.text_width
-		} else {//if (this.style.text_align == 'center') {
+		} else {//if (this.style.textAlign == 'center') {
 			this.text_x = this.x-this.text_width/2
 		}
 		if (true) { // eventually deal with vertical align here
 			this.text_y = this.y+this.text_height/2
 		}
 		if (this.text) {
-			drawText(this.style.font,this.style.textsize,this.style.textfill,this.text_x,this.text_y,this.text)
+			drawText(this.style.fontFamily,this.style.fontSize,this.style.fontColor,this.text_x,this.text_y,this.text)
 		}
 	}
 })
@@ -619,8 +625,13 @@ Fred.Polygon = Class.create(Fred.Object,{
 			},this)
 		}
 		this.selected = false
-		if (points) this.closed = true
-		else this.closed = false
+		if (points) {
+			this.closed = true
+			this.filled = true
+		} else {
+			this.closed = false
+			this.filled = false
+		}
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
@@ -631,10 +642,16 @@ Fred.Polygon = Class.create(Fred.Object,{
 		return this
 	},
 	name: 'untitled polygon',
-	apply_style: function() {
-		lineWidth(this.style.lineWidth)
-		strokeStyle(this.style.stroke)
-		fillStyle(this.style.fill)
+	apply_style: function(style) {
+		lineWidth(style.lineWidth)
+		strokeStyle(style.stroke)
+		fillStyle(style.fill)
+		if (style.pattern_img && style.pattern_img.width) {
+			fillPattern(style.pattern_img)
+		} else if (style.pattern) {
+			style.pattern_img = new Image()
+			style.pattern_img.src = style.pattern
+		}
 	},
 	/*
 	 * Is the offered point inside the polygon? Accounts for bezier polygons.
@@ -647,7 +664,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			} else {
 
 			}
-		} else if (this.closed()) {
+		} else if (this.closed) {
 			return Fred.Geometry.is_point_in_poly(this.points,x,y)
 		} else {
 		}
@@ -697,53 +714,25 @@ Fred.Polygon = Class.create(Fred.Object,{
 	},
 	draw: function() {
 		if (this.points && this.points.length > 0) {
-			this.apply_style()
-			var over_point = false
-			beginPath()
-			moveTo(this.points[0].x,this.points[0].y)
-			this.points.each(function(point,index){
-				var last_point = this.points[index-1]
-				var next_point = this.points[index+1]
-				if (index = 0 && !this.closed) last_point = false
-				if (point.bezier.prev != false && (last_point && last_point.bezier.next != false)) {
-					bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)
-				} else if (!point.bezier.prev && (last_point && last_point.bezier.next != false)) {
-					bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x,point.y,point.x,point.y)
-				} else if (point.bezier.prev) {
-					bezierCurveTo(point.x,point.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)
-				} else {
-					lineTo(point.x,point.y)
-				}
-			},this)
-			if (this.closed) {
-				lineTo(this.points[0].x,this.points[0].y)
-				fillStyle(this.style.fill)
-				if (this.pattern && this.pattern.width) {
-					fillPattern(this.pattern)
-				} else if (this.style.pattern) {
-					this.pattern = new Image()
-					this.pattern.src = this.style.pattern
-				}
-				save()
-					translate(this.x,this.y)
-					fill()
-				restore()
+			if (this.show_highlights && this.selected) {
+				this.apply_style(Fred.highlight_style)
+				lineWidth(1)
+				if (this.highlight_outline) this.draw_shape(Fred.highlight_style,true,false)
 			}
-			stroke()
+			this.apply_style(this.style)
+			this.draw_shape(this.style,this.closed,this.filled)
 			this.draw_text()
 
+			this.apply_style(Fred.highlight_style)
 			if (this.show_highlights) {
 			this.points.each(function(point){
 				save()
-				opacity(0.2)
 				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < Fred.click_radius) {
-					opacity(0.4)
 					over_point = true
-					fillStyle('#f55')
+					strokeRect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 					rect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				} else if (this.selected) {
 					lineWidth(2)
-					strokeStyle('#f55')
 					strokeRect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				}
 				restore()
@@ -754,12 +743,9 @@ Fred.Polygon = Class.create(Fred.Object,{
 						if (bezier) {
 							save()
 							lineWidth(1)
-							opacity(0.3)
-							strokeStyle(Fred.selection_color)
 							moveTo(point.x,point.y)
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
-								fillStyle(Fred.selection_color)
 								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
@@ -770,28 +756,22 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 			if (this.selected) {
 				save()
-					strokeStyle(Fred.selection_color)
-					opacity(0.2)
 					lineWidth(2)
 					strokeCircle(this.x,this.y,Fred.click_radius)
 				restore()
 			}
 			if (this.selected && this.closed) {
 				save()
-					strokeStyle(Fred.selection_color)
-					fillStyle(Fred.selection_color)
+					fillStyle(Fred.highlight_style.fill)
 					lineWidth(2)
-					opacity(0.2)
 					moveTo(this.x,this.y)
 					this.rotation_point = lineToPolar(this.rotation,50)
 					this.rotation_point.x += this.x
 					this.rotation_point.y += this.y
 					stroke()
 					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
-						opacity(0.4)
 						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
 					} else {
-						opacity(0.2)
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}
 				restore()
@@ -799,7 +779,37 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 		}
 	},
-	on_longclick: function() {
+	/*
+	 * This allows us to draw the shape multiple times, as for highlights
+	 */
+	draw_shape: function(style,closed,filled) {
+		var over_point = false
+		beginPath()
+		moveTo(this.points[0].x,this.points[0].y)
+		this.points.each(function(point,index){
+			var last_point = this.points[index-1]
+			var next_point = this.points[index+1]
+			if (index = 0 && !closed) last_point = false
+			if (point.bezier.prev != false && (last_point && last_point.bezier.next != false)) {
+				bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)
+			} else if (!point.bezier.prev && (last_point && last_point.bezier.next != false)) {
+				bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x,point.y,point.x,point.y)
+			} else if (point.bezier.prev) {
+				bezierCurveTo(point.x,point.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)
+			} else {
+				lineTo(point.x,point.y)
+			}
+		},this)
+		if (closed) {
+			lineTo(this.points[0].x,this.points[0].y)
+		}
+		if (filled) {
+			save()
+				translate(this.x,this.y)
+				fill()
+			restore()
+		}
+		stroke()
 	},
 })
 Fred.Rectangle = Class.create(Fred.Polygon,{
@@ -1013,8 +1023,11 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		this.on_dblclick()
 	},
 	on_dblclick: function(e) {
-		Fred.selection.first().text = prompt("Enter text for this object")
-		Fred.selection.first().setup_text()
+		var text = prompt("Enter text for this object")
+		if (text != "") {
+			Fred.selection.first().text = text
+			Fred.selection.first().setup_text()
+		}
 	},
 	on_mousedown: function() {
 		this.click_x = Fred.pointer_x
@@ -1137,6 +1150,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 			var on_final = (this.polygon.points.length > 1 && ((Math.abs(this.polygon.points[0].x - Fred.pointer_x) < Fred.click_radius) && (Math.abs(this.polygon.points[0].y - Fred.pointer_y) < Fred.click_radius)))
 			if (on_final && this.polygon.points.length > 1) {
 				this.polygon.closed = true
+				this.polygon.filled = true
 				this.complete_polygon()
 			} else if (!on_final) {
 				this.polygon.points.push(new Fred.Point(Fred.pointer_x,Fred.pointer_y))
@@ -1345,17 +1359,23 @@ Fred.tools.text = new Fred.Tool('write text',{
 	deselect: function() {
 	},
 	on_mouseup: function() {
+		strokeStyle('#ccc')
+		lineWidth(2)
+		strokeRect(Fred.pointer_x,Fred.pointer_y-3,100,Fred.default_style.fontSize+3)
 		var text = prompt("Enter text for this object")
-		var obj = new Fred.Rectangle(100,50,Fred.pointer_x,Fred.pointer_y)
-		obj.text = text
-		obj.setup_text()
-		obj.set_width(obj.text_width+parseInt(obj.style.padding))
-		obj.set_height(obj.text_height+parseInt(obj.style.padding))
-		Fred.move(obj,-obj.style.padding,-obj.style.padding,false)
-		obj.set_centroid()
-		obj.style.fill = 'rgba(0,0,0,0)'
-		obj.style.lineWidth = 0
-		Fred.add(obj)
+		if (text != "") {
+			var obj = new Fred.Rectangle(100,50,Fred.pointer_x,Fred.pointer_y)
+			obj.text = text
+			obj.setup_text()
+			obj.set_width(obj.text_width+parseInt(obj.style.padding))
+			obj.set_height(obj.text_height+parseInt(obj.style.padding))
+			Fred.move(obj,-obj.style.padding,-obj.style.padding,false)
+			obj.set_centroid()
+			obj.highlight_outline = true
+			obj.style.fill = 'none'
+			obj.style.lineWidth = 0
+			Fred.add(obj)
+		}
 		if (!this.sticky) {
 			Fred.select_tool('edit')
 		}

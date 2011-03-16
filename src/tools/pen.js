@@ -51,6 +51,7 @@ Fred.tools.pen = new Fred.Tool('draw polygons',{
 			var on_final = (this.polygon.points.length > 1 && ((Math.abs(this.polygon.points[0].x - Fred.pointer_x) < Fred.click_radius) && (Math.abs(this.polygon.points[0].y - Fred.pointer_y) < Fred.click_radius)))
 			if (on_final && this.polygon.points.length > 1) {
 				this.polygon.closed = true
+				this.polygon.filled = true
 				this.complete_polygon()
 			} else if (!on_final) {
 				this.polygon.points.push(new Fred.Point(Fred.pointer_x,Fred.pointer_y))

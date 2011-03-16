@@ -21,8 +21,11 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		this.on_dblclick()
 	},
 	on_dblclick: function(e) {
-		Fred.selection.first().text = prompt("Enter text for this object")
-		Fred.selection.first().setup_text()
+		var text = prompt("Enter text for this object")
+		if (text != "") {
+			Fred.selection.first().text = text
+			Fred.selection.first().setup_text()
+		}
 	},
 	on_mousedown: function() {
 		// record offset of x,y from mouse

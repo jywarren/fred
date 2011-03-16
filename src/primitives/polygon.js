@@ -16,8 +16,13 @@ Fred.Polygon = Class.create(Fred.Object,{
 			},this)
 		}
 		this.selected = false
-		if (points) this.closed = true
-		else this.closed = false
+		if (points) {
+			this.closed = true
+			this.filled = true
+		} else {
+			this.closed = false
+			this.filled = false
+		}
 		this.x = 0
 		this.y = 0
 		this.rotation = 0
@@ -28,10 +33,17 @@ Fred.Polygon = Class.create(Fred.Object,{
 		return this
 	},
 	name: 'untitled polygon',
-	apply_style: function() {
-		lineWidth(this.style.lineWidth)
-		strokeStyle(this.style.stroke)
-		fillStyle(this.style.fill)
+	apply_style: function(style) {
+		lineWidth(style.lineWidth)
+		strokeStyle(style.stroke)
+		fillStyle(style.fill)
+		// setup pattern, gracefully failing if it hasn't loaded yet:
+		if (style.pattern_img && style.pattern_img.width) {
+			fillPattern(style.pattern_img)
+		} else if (style.pattern) {
+			style.pattern_img = new Image()
+			style.pattern_img.src = style.pattern
+		}
 	},
 	/*
 	 * Is the offered point inside the polygon? Accounts for bezier polygons.
@@ -44,7 +56,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 			} else {
 
 			}
-		} else if (this.closed()) {
+		} else if (this.closed) {
 			// it's a normal polygon, no curves, no nonsense
 			return Fred.Geometry.is_point_in_poly(this.points,x,y)
 		} else {
@@ -105,55 +117,25 @@ Fred.Polygon = Class.create(Fred.Object,{
 	draw: function() {
 		// when first creating the poly, there are no points:
 		if (this.points && this.points.length > 0) {
-			this.apply_style()
-			var over_point = false
-			beginPath()
-			moveTo(this.points[0].x,this.points[0].y)
-			// bezier madness. There's probably a better way but i'm jetlagged
-			this.points.each(function(point,index){
-				var last_point = this.points[index-1]
-				var next_point = this.points[index+1]
-				if (index = 0 && !this.closed) last_point = false
-				// beziers are .next or .prev, depending which line segment they correspond to.
-				if (point.bezier.prev != false && (last_point && last_point.bezier.next != false)) {
-					bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)	
-				} else if (!point.bezier.prev && (last_point && last_point.bezier.next != false)) {
-					bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x,point.y,point.x,point.y)	
-				} else if (point.bezier.prev) {
-					bezierCurveTo(point.x,point.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)	
-				} else {
-					lineTo(point.x,point.y)
-				}
-			},this)
-			if (this.closed) {
-				lineTo(this.points[0].x,this.points[0].y)
-				fillStyle(this.style.fill)
-				if (this.pattern && this.pattern.width) {
-					fillPattern(this.pattern)
-				} else if (this.style.pattern) {
-					this.pattern = new Image()
-					this.pattern.src = this.style.pattern
-				}
-				save()
-					translate(this.x,this.y)
-					fill()
-				restore()
+			if (this.show_highlights && this.selected) {
+				this.apply_style(Fred.highlight_style)
+				lineWidth(1)
+				if (this.highlight_outline) this.draw_shape(Fred.highlight_style,true,false)
 			}
-			stroke()
+			this.apply_style(this.style)
+			this.draw_shape(this.style,this.closed,this.filled)
 			this.draw_text()
 
+			this.apply_style(Fred.highlight_style)
 			if (this.show_highlights) { 
 			this.points.each(function(point){
 				save()
-				opacity(0.2)
 				if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,point.x,point.y) < Fred.click_radius) {
-					opacity(0.4)
 					over_point = true
-					fillStyle('#f55')
+					strokeRect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 					rect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				} else if (this.selected) {
 					lineWidth(2)
-					strokeStyle('#f55')
 					strokeRect(point.x-Fred.click_radius,point.y-Fred.click_radius,Fred.click_radius*2,Fred.click_radius*2)
 				}
 				restore()
@@ -166,12 +148,9 @@ Fred.Polygon = Class.create(Fred.Object,{
 						if (bezier) {
 							save()
 							lineWidth(1)
-							opacity(0.3)
-							strokeStyle(Fred.selection_color)
 							moveTo(point.x,point.y)
 							lineTo(point.x+bezier.x,point.y+bezier.y)
 								save()
-								fillStyle(Fred.selection_color)
 								rect(point.x+bezier.x-Fred.click_radius/2,point.y+bezier.y-Fred.click_radius/2,Fred.click_radius,Fred.click_radius)
 								restore()
 							stroke()
@@ -183,8 +162,6 @@ Fred.Polygon = Class.create(Fred.Object,{
 			// draw center x,y of the polygon
 			if (this.selected) {
 				save()
-					strokeStyle(Fred.selection_color)
-					opacity(0.2)
 					lineWidth(2)
 					strokeCircle(this.x,this.y,Fred.click_radius)
 				restore()
@@ -192,20 +169,16 @@ Fred.Polygon = Class.create(Fred.Object,{
 			// draw rotation indicator
 			if (this.selected && this.closed) {
 				save()
-					strokeStyle(Fred.selection_color)
-					fillStyle(Fred.selection_color)
+					fillStyle(Fred.highlight_style.fill)
 					lineWidth(2)
-					opacity(0.2)
 					moveTo(this.x,this.y)
 					this.rotation_point = lineToPolar(this.rotation,50)
 					this.rotation_point.x += this.x
 					this.rotation_point.y += this.y
 					stroke()
 					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
-						opacity(0.4)
 						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
 					} else {
-						opacity(0.2)
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}
 				restore()
@@ -213,6 +186,38 @@ Fred.Polygon = Class.create(Fred.Object,{
 			}
 		}
 	},
-	on_longclick: function() {
+	/* 
+	 * This allows us to draw the shape multiple times, as for highlights
+	 */
+	draw_shape: function(style,closed,filled) {
+		var over_point = false
+		beginPath()
+		moveTo(this.points[0].x,this.points[0].y)
+		// bezier madness. There's probably a better way but i'm jetlagged
+		this.points.each(function(point,index){
+			var last_point = this.points[index-1]
+			var next_point = this.points[index+1]
+			if (index = 0 && !closed) last_point = false
+			// beziers are .next or .prev, depending which line segment they correspond to.
+			if (point.bezier.prev != false && (last_point && last_point.bezier.next != false)) {
+				bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)	
+			} else if (!point.bezier.prev && (last_point && last_point.bezier.next != false)) {
+				bezierCurveTo(last_point.x+last_point.bezier.next.x,last_point.y+last_point.bezier.next.y,point.x,point.y,point.x,point.y)	
+			} else if (point.bezier.prev) {
+				bezierCurveTo(point.x,point.y,point.x+point.bezier.prev.x,point.y+point.bezier.prev.y,point.x,point.y)	
+			} else {
+				lineTo(point.x,point.y)
+			}
+		},this)
+		if (closed) {
+			lineTo(this.points[0].x,this.points[0].y)
+		}	
+		if (filled) {
+			save()
+				translate(this.x,this.y)
+				fill()
+			restore()
+		}
+		stroke()
 	},
 })
