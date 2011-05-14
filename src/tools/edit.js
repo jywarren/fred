@@ -31,10 +31,16 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		// record offset of x,y from mouse
 		this.click_x = Fred.pointer_x
 		this.click_y = Fred.pointer_y
-		if (Fred.selection.is_point_inside(Fred.pointer_x,Fred.pointer_y)) {
-				this.dragging_object = true
-				this.selection_orig_x = Fred.selection.x
-				this.selection_orig_y = Fred.selection.y
+		// if rotating:
+		if (!Fred.selection.empty && Fred.selection.first().rotation_point && Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,Fred.selection.first().rotation_point.x,Fred.selection.first().rotation_point.y) < Fred.click_radius) {
+			this.rotating_object = true
+			this.start_drag_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,Fred.pointer_x,Fred.pointer_y).angle
+			this.selection_orig_x = Fred.selection.first().x
+			this.selection_orig_y = Fred.selection.first().y
+		} else if (Fred.selection.is_point_inside(Fred.pointer_x,Fred.pointer_y)) {
+			this.dragging_object = true
+			this.selection_orig_x = Fred.selection.x
+			this.selection_orig_y = Fred.selection.y
 		} else {
 			Fred.selection.clear()
 			if (Fred.selection.get_under_pointer()) {
@@ -51,7 +57,21 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		}
 	},
 	on_mousemove: function() {
-		if (this.dragging_object) {
+		if (this.rotating_object) {
+			// use standard is_polygon checks from main.js...
+			if (Fred.selection.first().points) {
+				var current_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,Fred.pointer_x,Fred.pointer_y).angle
+				var angle_change = current_angle-this.start_drag_angle
+				//console.log(angle_change*180/Math.PI)
+				Fred.selection.first().points.each(function(point) {
+					var current_point_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,point.x,point.y).angle
+				console.log((current_point_angle+angle_change)*180/Math.PI)
+					var new_position = Fred.Geometry.rotate_around_point(Fred.selection.x,Fred.selection.y,point.x,point.y,current_point_angle+angle_change)
+					point.x = new_position.x
+					point.y = new_position.y
+				},this)
+			}
+		} else if (this.dragging_object) {
 			var x = this.selection_orig_x + Fred.pointer_x - this.click_x
 			var y = this.selection_orig_y + Fred.pointer_y - this.click_y
 			Fred.move(Fred.selection,x,y,true)
@@ -81,6 +101,7 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	},
 	on_mouseup: function() {
 		if (this.dragging_object) this.dragging_object = false
+		if (this.rotating_object) this.rotating_object = false
 		if (this.dragging_selection) this.dragging_selection = false
 		if (this.getDataUrl == true) {
 			getDataUrl

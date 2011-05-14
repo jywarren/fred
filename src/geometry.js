@@ -1,11 +1,29 @@
 // Geometric utility storage
 Fred.Geometry = {
 	/**
-	 * Determines of a point is in a polygon. 
-	 * @param {Node[]} poly Array of nodes that make up the polygon
-	 * @param {Number} x    X-coordinate of the point to check for
-	 * @return True if the point is inside the polygon, else false
-	 * @type Boolean
+	 * Yields an angle and distance given an origin point and subject point
+	 * @param {Number} x1    X-coordinate of the origin point
+	 * @param {Number} y1    Y-coordinate of the origin point
+	 * @param {Number} x2    X-coordinate of the subject point
+	 * @param {Number} y2    Y-coordinate of the subject point
+	 * @return {angle:Number,distance:Number}   
+	 * @type Object
+	 */
+	polar_from_points: function(x1,y1,x2,y2) {
+		// cos(a) = (x2-x1)/(y2-y1)
+		var angle = Math.atan((y2-y1)/(x2-x1))
+		var distance = Fred.Geometry.distance(x1,y1,x2,y2)
+		return {angle:angle,distance:distance}
+	},
+
+	/**
+	 * Yields a new point given an original point, angle, and distance.
+	 * @param {Number} x    X-coordinate of the original point
+	 * @param {Number} y    Y-coordinate of the original point
+	 * @param {Number} t    Angle between the new point and the old point
+	 * @param {Number} d    Distance between old and new points
+	 * @return {x:Number,y:Number}   
+	 * @type Object
 	 */
 	point_from_polar: function(x,y,t,d) {
 		var dx = d*Math.acos(t)
@@ -13,11 +31,43 @@ Fred.Geometry = {
 		//$C.lineTo($c.lastPoint.x+dx,$c.lastPoint.y+dy)
 		return {x:dx+x,y:dy+y}
 	},
+
+	/**
+	 * Yields a new point given an original point, angle, and distance.
+	 * @param {Number} origin_x    X-coordinate of the origin point
+	 * @param {Number} origin_y    Y-coordinate of the origin point
+	 * @param {Number} x    X-coordinate of the point to move
+	 * @param {Number} y    Y-coordinate of the point to move
+	 * @param {Number} angle    Angle to rotate to around origin (absolute)
+	 * @return {x:Number,y:Number}   
+	 * @type Object
+	 */
+	rotate_around_point: function(origin_x,origin_y,x,y,angle) {
+		var distance = Fred.Geometry.distance(origin_x,origin_y,x,y)
+		// This is for a change in size as well as angle -- saving for later
+		//var distance_change = distance - this.self_distance
+
+		var new_x = origin_x+Math.cos(angle)*(distance)//+distance_change)
+		var new_y = origin_y+Math.sin(angle)*(distance)//+distance_change)
+		return {x: new_x, y: new_y}
+	},
+
+	/**
+	 * Determines if a point is in a polygon. 
+	 * @param {Number} x    X-coordinate of the first point
+	 * @param {Number} y    Y-coordinate of the first point
+	 * @param {Number} x    X-coordinate of the second point
+	 * @param {Number} y    Y-coordinate of the second point
+	 * 
+	 * @return Number 	The distance between the two points
+	 * @type Number
+	 */
 	distance: function(x1,y1,x2,y2) {
 		return Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2))
 	},
+
 	/**
-	 * Determines of a point is in a polygon. 
+	 * Determines if a point is in a polygon. 
 	 * @param {Node[]} poly Array of nodes that make up the polygon
 	 * @param {Number} x    X-coordinate of the point to check for
 	 * @param {Number} y    Y-coordinate of the point to check for
@@ -35,6 +85,7 @@ Fred.Geometry = {
 	        && (c = !c);
 	    return c;
 	},
+
 	/**
 	 * Finds the centroid of a polygon
 	 * @param {Node[]} polygon Array of points that make up the polygon
@@ -64,6 +115,7 @@ Fred.Geometry = {
 		centroid[1] = cy
 		return centroid
 	},
+
         /**
          * Finds the area of a polygon
          * @param {Fred.Point[]}  points    Array of points with p.x and
@@ -86,6 +138,7 @@ Fred.Geometry = {
                 if (signed) return area/2
                 else return Math.abs(area/2)
         },
+
 	/**
 	 * Determines whether poly_a and poly_b overlap, where
 	 * each has array poly.points with point.x and point.y

@@ -67,11 +67,9 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.points.each(function(point) {
 			if (point.bezier.prev != false) {
 				is_bezier = true
-				break
 			}
 			if (point.bezier.next != false) {
 				is_bezier = true
-				break
 			}
 		},this)
 		return is_bezier
@@ -178,6 +176,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 					stroke()
 					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
 						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
+						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					} else {
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}

@@ -674,11 +674,9 @@ Fred.Polygon = Class.create(Fred.Object,{
 		this.points.each(function(point) {
 			if (point.bezier.prev != false) {
 				is_bezier = true
-				break
 			}
 			if (point.bezier.next != false) {
 				is_bezier = true
-				break
 			}
 		},this)
 		return is_bezier
@@ -771,6 +769,7 @@ Fred.Polygon = Class.create(Fred.Object,{
 					stroke()
 					if (Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,this.rotation_point.x,this.rotation_point.y) < Fred.click_radius) {
 						circle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2+2)
+						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					} else {
 						strokeCircle(this.rotation_point.x,this.rotation_point.y,Fred.click_radius/2)
 					}
@@ -1032,10 +1031,15 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	on_mousedown: function() {
 		this.click_x = Fred.pointer_x
 		this.click_y = Fred.pointer_y
-		if (Fred.selection.is_point_inside(Fred.pointer_x,Fred.pointer_y)) {
-				this.dragging_object = true
-				this.selection_orig_x = Fred.selection.x
-				this.selection_orig_y = Fred.selection.y
+		if (!Fred.selection.empty && Fred.selection.first().rotation_point && Fred.Geometry.distance(Fred.pointer_x,Fred.pointer_y,Fred.selection.first().rotation_point.x,Fred.selection.first().rotation_point.y) < Fred.click_radius) {
+			this.rotating_object = true
+			this.start_drag_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,Fred.pointer_x,Fred.pointer_y).angle
+			this.selection_orig_x = Fred.selection.first().x
+			this.selection_orig_y = Fred.selection.first().y
+		} else if (Fred.selection.is_point_inside(Fred.pointer_x,Fred.pointer_y)) {
+			this.dragging_object = true
+			this.selection_orig_x = Fred.selection.x
+			this.selection_orig_y = Fred.selection.y
 		} else {
 			Fred.selection.clear()
 			if (Fred.selection.get_under_pointer()) {
@@ -1052,7 +1056,19 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 		}
 	},
 	on_mousemove: function() {
-		if (this.dragging_object) {
+		if (this.rotating_object) {
+			if (Fred.selection.first().points) {
+				var current_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,Fred.pointer_x,Fred.pointer_y).angle
+				var angle_change = current_angle-this.start_drag_angle
+				Fred.selection.first().points.each(function(point) {
+					var current_point_angle = Fred.Geometry.polar_from_points(Fred.selection.x,Fred.selection.y,point.x,point.y).angle
+				console.log((current_point_angle+angle_change)*180/Math.PI)
+					var new_position = Fred.Geometry.rotate_around_point(Fred.selection.x,Fred.selection.y,point.x,point.y,current_point_angle+angle_change)
+					point.x = new_position.x
+					point.y = new_position.y
+				},this)
+			}
+		} else if (this.dragging_object) {
 			var x = this.selection_orig_x + Fred.pointer_x - this.click_x
 			var y = this.selection_orig_y + Fred.pointer_y - this.click_y
 			Fred.move(Fred.selection,x,y,true)
@@ -1080,6 +1096,7 @@ Fred.tools.edit = new Fred.Tool('select & manipulate objects',{
 	},
 	on_mouseup: function() {
 		if (this.dragging_object) this.dragging_object = false
+		if (this.rotating_object) this.rotating_object = false
 		if (this.dragging_selection) this.dragging_selection = false
 		if (this.getDataUrl == true) {
 			getDataUrl
@@ -1478,14 +1495,30 @@ Fred.toolbar = {
 	}
 }
 Fred.Geometry = {
+	polar_from_points: function(x1,y1,x2,y2) {
+		var angle = Math.atan((y2-y1)/(x2-x1))
+		var distance = Fred.Geometry.distance(x1,y1,x2,y2)
+		return {angle:angle,distance:distance}
+	},
+
 	point_from_polar: function(x,y,t,d) {
 		var dx = d*Math.acos(t)
 		var dy = d*Math.asin(t)
 		return {x:dx+x,y:dy+y}
 	},
+
+	rotate_around_point: function(origin_x,origin_y,x,y,angle) {
+		var distance = Fred.Geometry.distance(origin_x,origin_y,x,y)
+
+		var new_x = origin_x+Math.cos(angle)*(distance)//+distance_change)
+		var new_y = origin_y+Math.sin(angle)*(distance)//+distance_change)
+		return {x: new_x, y: new_y}
+	},
+
 	distance: function(x1,y1,x2,y2) {
 		return Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2))
 	},
+
 	is_point_in_poly: function(poly, x, y){
 	    for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
 	        ((poly[i].y <= y && y < poly[j].y) || (poly[j].y <= y && y < poly[i].y))
@@ -1493,6 +1526,7 @@ Fred.Geometry = {
 	        && (c = !c);
 	    return c;
 	},
+
 	poly_centroid: function(polygon) {
 		var n = polygon.length
 		var cx = 0, cy = 0
@@ -1516,6 +1550,7 @@ Fred.Geometry = {
 		centroid[1] = cy
 		return centroid
 	},
+
         poly_area: function(points, signed) {
                 var area = 0
                 points.each(function(point,index) {
@@ -1528,6 +1563,7 @@ Fred.Geometry = {
                 if (signed) return area/2
                 else return Math.abs(area/2)
         },
+
 	does_poly_overlap_poly: function(poly_a,poly_b) {
 	}
 }
