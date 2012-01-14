@@ -1636,7 +1636,7 @@ Fred.keys = {
 	},
 	on_keydown: function(event) {
 		if (event.keyCode) code = event.keyCode;
-		else if (event.which) code = event.which;
+		else (event.which) code = event.which;
 		var character = String.fromCharCode(code).toLowerCase();
 		this.modifiers.keys().each(function(modifier) {
 			if (modifier == character) Fred.keys.modifiers.set(modifier,true)
